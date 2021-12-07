@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import model.Camada;
 import model.Livro;
 import model.Magia;
+import model.Personagem;
 import model.PortalDesafio;
 
 public class DesafioPanel extends JPanel{
@@ -21,20 +22,22 @@ public class DesafioPanel extends JPanel{
 	private ArrayList<Rectangle>  retangulosPercursoVerticalBaixo,retangulosPercursoVerticalCima;
 	private ArrayList<Rectangle> retangulosPercursoHorizontalEsquerda,retangulosPercursoHorizontalDireita;
 	private Magia magia;
+	private Personagem personagem;
 	private Livro livro;
 	private PortalDesafio inicio, fim;
 	private BufferedImage imagem;
 	boolean comecou;
 	
 	
-	public DesafioPanel(ArrayList<Camada> camadas, Magia magia) {
+	public DesafioPanel(ArrayList<Camada> camadas, Personagem personagem) {
 		this.retangulosPercursoVerticalBaixo = new ArrayList<Rectangle>();
 		this.retangulosPercursoVerticalCima = new ArrayList<Rectangle>();
 		this.retangulosPercursoHorizontalEsquerda=new ArrayList<Rectangle>();
 		this.retangulosPercursoHorizontalDireita=new ArrayList<Rectangle>();
 	//	inicializarCoordenadasDoPercurso();
 		this.camadas=camadas;
-		this.magia=magia;
+//		this.magia=magia;
+		this.personagem = personagem;
 		this.livro = new Livro(0, 0, "imagens\\desafio1.png");
 		
 		try {
@@ -76,7 +79,7 @@ public class DesafioPanel extends JPanel{
 		}
 		desenhar.drawImage(this.inicio.getImagem(), this.inicio.getX(), this.inicio.getY(),null);
 		desenhar.drawImage(this.fim.getImagem(), this.fim.getX(), this.fim.getY(),null);
-		desenhar.drawImage(this.magia.getImagem(),this.magia.getX(),this.magia.getY() , null);
+		desenhar.drawImage(this.personagem.getSprites()[this.personagem.getAparencia()],this.personagem.getX(),this.personagem.getY() , null);
 		desenhar.drawImage(imagem,60,20,null);
 //		desenhar.drawRect(280, 320, 20, 20);
 //		desenhar.drawRect(this.magia.getX(), this.magia.getY(), this.magia.getLargura(), this.magia.getAltura());
@@ -149,6 +152,10 @@ public class DesafioPanel extends JPanel{
 
 	public void setFim(PortalDesafio fim) {
 		this.fim = fim;
+	}
+
+	public Personagem getPersonagem() {
+		return personagem;
 	}
 	
 	

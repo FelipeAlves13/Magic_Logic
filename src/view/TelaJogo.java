@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 public class TelaJogo extends JFrame{
 	private MenuPanel menuPanel;
 	private MapaDasFasesPanel mapaDasFasesPanel;
-	private ExibirMensagem exibirMensagem, exibirAviso, exibirAvisoLongo, exibirGameOver;
+	private ExibirMensagem exibirMensagem, exibirAviso, exibirAvisoLongo, exibirGameOver, exibirDesafio, exibirParabens,exibirInvalida;
 	private SobrePanel sobrePanel;
 	private CreditosPanel creditosPanel;
 	private ContainerFase containerFase;
@@ -63,10 +63,27 @@ public class TelaJogo extends JFrame{
 		this.ajudaPanel=new AjudaPanel();
 	}
 	
+	public void exibirDesafioPanel() {
+		this.exibirDesafio=new ExibirMensagem("","","");
+	}
+	
 	public void exibirMsgGameOver() {
 		this.exibirGameOver=new ExibirMensagem(false);
 	}
 	
+	public void exibirParabens() {
+		this.exibirParabens=new ExibirMensagem(true, "");
+	}
+	
+	
+	public void exibirInvalida() {
+		this.exibirInvalida=new ExibirMensagem(false,false);
+	}
+	
+	public ExibirMensagem getExibirParabens() {
+		return exibirParabens;
+	}
+
 	public MenuPanel getMenuPanel() {
 		return menuPanel;
 	}
@@ -105,6 +122,14 @@ public class TelaJogo extends JFrame{
 
 	public ExibirMensagem getExibirGameOver() {
 		return exibirGameOver;
+	}
+
+	public ExibirMensagem getExibirDesafio() {
+		return exibirDesafio;
+	}
+
+	public ExibirMensagem getExibirInvalida() {
+		return exibirInvalida;
 	}
 	
 	

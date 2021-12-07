@@ -52,7 +52,7 @@ public class Camada {
 		try {
 
 			while ((linha = br.readLine()) != null){
-				System.out.println(linha);
+				//System.out.println(linha);
 				linhasMatrizCamada.add(linha);
 			}
 			int j = 0;

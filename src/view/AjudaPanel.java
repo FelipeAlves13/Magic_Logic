@@ -2,17 +2,10 @@ package view;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.SystemColor;
 
-import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-
-import util.Limitador;
 
 public class AjudaPanel extends JDialog {
 	
@@ -31,12 +24,12 @@ public class AjudaPanel extends JDialog {
 		setAlwaysOnTop(true);
 		
 		setUndecorated(true);
-		getRootPane().setOpaque(false);
+		
 		//getContentPane().setBackground(new Color(0,0,0,0));
-		setBackground(SystemColor.textHighlight);
+		setBackground(Color.BLUE);
 		
 		fecharLabel = new JLabel(new ImageIcon("Imagens\\fechar.png"));
-		fecharLabel.setBounds(625, 10, 40, 40);
+		fecharLabel.setBounds(651, 10, 40, 40);
 		add(fecharLabel);
 		
 		linhaComandoSupLabel=new JLabel("________________________________________________________________");
@@ -80,6 +73,12 @@ public class AjudaPanel extends JDialog {
 		andarDireitaLabel.setForeground(Color.WHITE);
 		andarDireitaLabel.setBounds(30, 280, 300, 46);
 		add(andarDireitaLabel);
+		
+		atirarMagiaLabel = new JLabel("Captura inimigo",new ImageIcon("imagens\\congelar.png"), JLabel.LEFT); 
+		atirarMagiaLabel.setFont(new Font("Arial",Font.BOLD,16));
+		atirarMagiaLabel.setForeground(Color.WHITE);
+		atirarMagiaLabel.setBounds(30, 326, 300, 46);
+		add(atirarMagiaLabel);
 		
 		funcaoLabel = new JLabel("Executa os comandos no campo função",new ImageIcon("imagens\\funcao.png"), JLabel.LEFT);
 		funcaoLabel.setFont(new Font("Arial",Font.BOLD,16));
@@ -150,7 +149,7 @@ public class AjudaPanel extends JDialog {
 		
 		JLabel fundoImg = new JLabel(new ImageIcon("imagens\\fundo.png"));
 		fundoImg.setBounds(10, 10, 680, 580);
-		
+		fundoImg.setBackground(new Color(0,0,0,0));
 		
 		add(fundoImg);
 		show(false);

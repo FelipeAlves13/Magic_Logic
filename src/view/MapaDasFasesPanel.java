@@ -13,7 +13,8 @@ import javax.swing.JSpinner;
 public class MapaDasFasesPanel extends JPanel {
 	private JLabel fase1IconPanel, fase2IconPanel, fase3IconPanel;
 	private JLabel titulo,sombraTitulo, voltarLabel,interrogacaoLabel;
-	private JLabel bacground,nomeDoJogador,life,backFase;
+	private JLabel bacground,nomeDoJogador,life,backFase, cristais, rotuloCristais;
+	private JLabel bruxinha, rotuloBruxinha;
 	private JProgressBar lifebar;
 	
 	public MapaDasFasesPanel(){
@@ -44,6 +45,27 @@ public class MapaDasFasesPanel extends JPanel {
 		this.lifebar.setBounds(50, 62, 180, 21);
 		this.add(this.lifebar);
 		
+		this.rotuloCristais=new JLabel("0/4");
+		this.rotuloCristais.setBounds(406,85, 65, 40);
+		this.rotuloCristais.setFont(new Font("Arial", Font.BOLD, 30));
+		this.rotuloCristais.setForeground(Color.LIGHT_GRAY);
+		add(this.rotuloCristais);
+		
+		this.cristais= new JLabel(new ImageIcon("Imagens\\cristal.png"));
+		this.cristais.setBounds(340, 58, 65, 70);
+		add(cristais);
+		
+		this.rotuloBruxinha=new JLabel("Não Salva");
+		this.rotuloBruxinha.setBounds(566,85, 265, 40);
+		this.rotuloBruxinha.setFont(new Font("Arial", Font.BOLD, 30));
+		this.rotuloBruxinha.setForeground(Color.LIGHT_GRAY);
+		add(this.rotuloBruxinha);
+		
+		this.bruxinha  = new JLabel(new ImageIcon("Imagens\\irma.png"));
+		this.bruxinha.setBounds(476, 20, 120, 100);
+		add(bruxinha);
+		
+		
 		sombraTitulo = new JLabel("Teleporte-se para um reino");
 		sombraTitulo.setFont(new Font("Arial",Font.BOLD, 30));
 		sombraTitulo.setBounds(240, 150, 500, 40);
@@ -61,18 +83,16 @@ public class MapaDasFasesPanel extends JPanel {
 		fase1IconPanel.setBounds(30, 350, 187, 158);
 		add(fase1IconPanel);
 		
-		fase2IconPanel = new JLabel(new ImageIcon("imagens\\fase2.png"));
+		fase2IconPanel = new JLabel(new ImageIcon("imagens\\fase2Opaca.png"));
 		fase2IconPanel.setBounds(330, 260, 187, 158);
 		add(fase2IconPanel);
 		
-		fase3IconPanel = new JLabel(new ImageIcon("imagens\\fase3.png"));
+		fase3IconPanel = new JLabel(new ImageIcon("imagens\\fase3Opaca.png"));
 		fase3IconPanel.setBounds(640, 370, 187, 158);
 		add(fase3IconPanel);
 	
 		backFase =  new JLabel(new ImageIcon("imagens\\focoLuz.png"));
-		//backFase.setBounds(18, 430, 219,200);//fase1
-		//backFase.setBounds(314, 330, 219, 200);//fase2
-		//backFase.setBounds(622, 430, 219, 200);
+		
 		
 		add(backFase);
 		
@@ -131,6 +151,15 @@ public class MapaDasFasesPanel extends JPanel {
 
 	public JProgressBar getLifebar() {
 		return lifebar;
+	}
+
+	public JLabel getRotuloCristais() {
+		return rotuloCristais;
+	}
+	
+
+	public JLabel getRotuloBruxinha() {
+		return rotuloBruxinha;
 	}
 
 	

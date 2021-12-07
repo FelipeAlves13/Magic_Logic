@@ -31,6 +31,7 @@ public class Fase1 extends Fase{
 		this.getRetangulosPercursoVerticalCima().add(new Rectangle(300,200,20,20));
 		this.getRetangulosPercursoVerticalCima().add(new Rectangle(40,200,20,20));
 		this.getRetangulosPercursoVerticalCima().add(new Rectangle(480,140,40,20));
+		this.getRetangulosPercursoVerticalCima().add(new Rectangle(160,100,20,30));
 		
 		//VERTICAL BAIXO
 		this.getRetangulosPercursoVerticalBaixo().add(new Rectangle(160, 240, 20, 5));
@@ -38,7 +39,7 @@ public class Fase1 extends Fase{
 		this.getRetangulosPercursoVerticalBaixo().add(new Rectangle(300, 480, 20, 20));
 		this.getRetangulosPercursoVerticalBaixo().add(new Rectangle(140, 460, 40, 20));
 		this.getRetangulosPercursoVerticalBaixo().add(new Rectangle(40, 400, 40, 20));
-		this.getRetangulosPercursoVerticalBaixo().add(new Rectangle(500, 480, 40, 20));
+		this.getRetangulosPercursoVerticalBaixo().add(new Rectangle(500, 460, 40, 20));
 		this.getRetangulosPercursoVerticalBaixo().add(new Rectangle(420, 200, 40, 20));
 		
 		//HORIZONTAL DIREITA
@@ -49,7 +50,7 @@ public class Fase1 extends Fase{
 		this.getRetangulosPercursoHorizontalDireita().add(new Rectangle(320, 220, 20,20));
 		this.getRetangulosPercursoHorizontalDireita().add(new Rectangle(180, 380, 20,20));
 		this.getRetangulosPercursoHorizontalDireita().add(new Rectangle(510, 140, 20,20));
-		
+		this.getRetangulosPercursoHorizontalDireita().add(new Rectangle(510, 460, 20,20));
 		//HORIZONTAL ESQUERDA
 		//CAMPO ABERTO
 		this.getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(140, 200, 30, 40));
@@ -80,7 +81,10 @@ public class Fase1 extends Fase{
 					desenhar.drawImage(this.getLivros().get(cont-2).getImagem(),this.getLivros().get(cont-2).getX(),this.getLivros().get(cont-2).getY() , null);
 				}
 				for(Inimigo i:this.getInimigo()) {
-					desenhar.drawImage(i.getSprites()[i.getAparencia()],i.getX(),i.getY(),null);
+					if(!i.isAparecer()) {
+						desenhar.drawImage(i.getSprites()[i.getAparencia()],i.getX(),i.getY(),null);
+					}
+					
 				}
 				desenhar.drawImage(this.getPersonagem().getSprites()[this.getPersonagem().getAparencia()],this.getPersonagem().getX(),this.getPersonagem().getY(),null);
 			}else if(cont!=3) {

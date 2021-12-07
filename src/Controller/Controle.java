@@ -2,12 +2,16 @@ package Controller;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -17,8 +21,8 @@ import javax.swing.border.TitledBorder;
 
 import model.Cristal;
 import model.Dados;
+import model.Inimigo;
 import model.Livro;
-import model.Magia;
 import model.Personagem;
 import view.AjudaPanel;
 import view.CreditosPanel;
@@ -41,7 +45,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 	
 	private TelaJogo telaJogo;
 	
-	private ExibirMensagem iniciarJogo, exibirMensagens,exibirMensagenLonga,exibirGameOver;
+	private ExibirMensagem iniciarJogo, exibirMensagens,exibirMensagenLonga,exibirGameOver, exibirDesafio, exibirParabens,exibirInvalida;
 	private AjudaPanel ajudaPanel;
 	
 	private MapaDasFasesPanel mapaDasFasesPanel;
@@ -64,8 +68,11 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 	private ArrayList<Boolean> retangulosAcimaColidiuFase2,retangulosAbaixoColidiuFase2,retangulosEsquerdaColidiuFase2,retangulosDireitaColidiuFase2;
 	private ArrayList<Boolean> retangulosEsquerdaColidiuFase1, retangulosDireitaColidiuFase1, retangulosEsquerdaColidiuFase3, retangulosDireitaColidiuFase3;
 	private boolean opostoEsquerda,opostoDireita, opostoDireitaAcima, opostoEsquerdaAcima, opostoAcima,opostoAbaixo;
+	
 	//private Rectangle retanguloTemporario;
-	private boolean querJogar,concluiuDesafio=true;
+	private boolean querJogar,concluiuDesafio=true,repeteEsquerdaInimigo,repeteDireitaInimigo, repeteAcimaInimigo, repeteAbaixoInimigo;
+	private boolean livroSumiu;
+	private int esquerdaInimigo, direitaInimigo, acimaInimigo, abaixoInimigo;
 	
 	private JLabel cdLabel;
 	
@@ -76,6 +83,9 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 		this.sobrePanel=telaJogo.getSobrePanel();
 		this.creditosPanel=telaJogo.getCreditosPanel();
 		
+		this.esquerdaInimigo=9;
+		this.abaixoInimigo=6;
+		this.direita=3;
 		retangulosAcimaColidiuFase2= new ArrayList<Boolean>();
 		retangulosAbaixoColidiuFase2= new ArrayList<Boolean>();
 		retangulosEsquerdaColidiuFase2= new ArrayList<Boolean>();
@@ -124,13 +134,22 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 		this.telaJogo.exibirAvisoLongo();
 		this.telaJogo.exibirAjuda();
 		this.telaJogo.exibirMsgGameOver();
+		this.telaJogo.exibirDesafioPanel();
+		this.telaJogo.exibirParabens();
+		this.telaJogo.exibirInvalida();
 		
 		this.exibirGameOver=this.telaJogo.getExibirGameOver();
 		this.iniciarJogo = this.telaJogo.getExibirMensagem();
 		this.exibirMensagens=this.telaJogo.getExibirAviso();
 		this.exibirMensagenLonga=this.telaJogo.getExibirAvisoLongo();
 		this.ajudaPanel=this.telaJogo.getAjudaPanel();
+		this.exibirDesafio=this.telaJogo.getExibirDesafio();
+		this.exibirParabens=this.telaJogo.getExibirParabens();
+		this.exibirDesafio.getOkAviso().addActionListener(this);
+		this.exibirInvalida=this.telaJogo.getExibirInvalida();
+		this.exibirInvalida.getOkInvalida().addActionListener(this);
 		
+		this.exibirParabens.getOkParabens().addActionListener(this);
 		this.exibirGameOver.getJogarNovamente().addActionListener(this);
 		this.exibirGameOver.getNaoJogar().addActionListener(this);
 		
@@ -171,6 +190,8 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 		this.telaJogo.getContainerFase().getIniciarLabel().addMouseListener(this);
 		
 		
+		this.sobrePanel.getLink().addMouseListener(this);
+		
 	}
 
 	public void run() {
@@ -198,15 +219,18 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								if(Dados.desafioAtivado) {
 									if(percursoVertical("baixo")) {
 										if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getY()+20);
+											//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getY()+20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem(), "baixo");
 											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getY()+20);
+											//this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getY()+20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem(), "baixo");
 											this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getY()+20);
+										//	this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getY()+20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem(), "baixo");
 											this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}
@@ -219,6 +243,17 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									
 								}else if(fase1.isVisible()) {
 									//FASE 1
+									int indice=0;
+									for (Inimigo inimigo:this.fase1.getInimigo()) {
+										if(fase1.getLivros().get(0).isPegouLivro()&indice==1) {
+											andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase1.getPersonagem(), null);
+										}
+										indice++;
+										
+									}
 									if(percursoVertical("baixo")&(!checarColisaoLivros())) {
 										mudarAparencia(this.fase1.getPersonagem(),"baixo");
 										
@@ -229,6 +264,9 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									Thread.sleep(200);
 								}else if(fase2.isVisible()) {
 									//FASE 2
+									for (Inimigo inimigo:this.fase2.getInimigo()) {
+										andar(inimigo, this.fase2.getPersonagem(), null);
+									}
 									if(percursoVertical("baixo")) {
 										mudarAparencia(this.fase2.getPersonagem(),"baixo");
 										
@@ -240,6 +278,17 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									
 								}else if(fase3.isVisible()) {
 									//FASE 3
+									int indice = 0;
+									for (Inimigo inimigo:this.fase3.getInimigo()) {
+										if(fase3.getLivros().get(0).isPegouLivro()&indice==0) {
+											andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase3.getPersonagem(), null);
+										}
+										indice++;
+										
+									}
 									if(percursoVertical("baixo")) {
 										mudarAparencia(this.fase3.getPersonagem(),"baixo");
 										
@@ -254,7 +303,8 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 							if(indiceColisaoAcimaOuAbaixo==6) {
 								retangulosDireitaColidiuFase2.set(4, true);
 								retangulosEsquerdaColidiuFase2.set(6, true);
-							}else if(indiceColisaoAcimaOuAbaixo==5) {
+								retangulosEsquerdaColidiuFase2.set(0, true);
+							}else if(indiceColisaoAcimaOuAbaixo==4) {
 								retangulosDireitaColidiuFase2.set(1, true);
 							}else if(indiceColisaoAcimaOuAbaixo==10) {
 								retangulosDireitaColidiuFase2.set(3, true);
@@ -265,6 +315,13 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								retangulosEsquerdaColidiuFase2.set(2, true);
 								retangulosEsquerdaColidiuFase2.set(4, false);
 								retangulosDireitaColidiuFase2.set(3, false);
+							}else if(indiceColisaoAcimaOuAbaixo==8) {
+								//System.out.println("asjkajkladakllaNFLAFN");
+								retangulosDireitaColidiuFase2.set(0, true);
+							}else if(indiceColisaoAcimaOuAbaixo==2) {
+								System.out.println("mshcbak.svlbevnlçenvçqnçn çd nql.nvlq");
+								retangulosDireitaColidiuFase3.set(0, false);
+								retangulosEsquerdaColidiuFase3.set(0, false);
 							}
 						}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("esquerda")) {
 							esquerdaAndando=true;
@@ -285,23 +342,23 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								}
 								
 							}
-							else if(fase3.isVisible()) {
-								retangulosDireitaColidiuFase3.set(0,true);
 							
-							}
 							while(esquerdaAndando) {
 								if(Dados.desafioAtivado) {
 									if(percursoHorizontal("esquerda")) {
 										if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getX()-20);
+											//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getX()-20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem(), "esquerda");
 											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getX()-20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem(), "esquerda");
+										//	this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getX()-20);
 											this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getX()-20);
+											//this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getX()-20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem(), "esquerda");
 											this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}
@@ -314,6 +371,17 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 //										
 						//			}
 								}else if(fase1.isVisible()) {
+									int indice=0;
+									for (Inimigo inimigo:this.fase1.getInimigo()) {
+										if(fase1.getLivros().get(0).isPegouLivro()&indice==1) {
+											andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase1.getPersonagem(), null);
+										}
+										indice++;
+										
+									}
 									if(percursoHorizontal("esquerda")&(!checarColisaoLivros())&(!colidiuCristal())) {
 										mudarAparencia(this.fase1.getPersonagem(),"esquerda");
 									}else {
@@ -323,16 +391,33 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									this.fase1.repaint();
 									Thread.sleep(200);
 								}else if(fase2.isVisible()) {
-									System.out.println("olaaa");
+								//	System.out.println("olaaa");
+									for (Inimigo inimigo:this.fase2.getInimigo()) {
+										andar(inimigo, this.fase2.getPersonagem(), null);
+									}
+								//	System.out.println(percursoHorizontal("esquerda"));
 									if(percursoHorizontal("esquerda")&(!checarColisaoLivros())&(!colidiuCristal())) {
+										//System.out.println("homiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii");
 										mudarAparencia(this.fase2.getPersonagem(),"esquerda");
 									}else {
 										//finalizouDesafio();
+										esquerda=6;
 										esquerdaAndando=false;
 									}
 									this.fase2.repaint();
 									Thread.sleep(200);
 								}else if(fase3.isVisible()) {
+									int indice = 0;
+									for (Inimigo inimigo:this.fase3.getInimigo()) {
+										if(fase3.getLivros().get(0).isPegouLivro()&indice==0) {
+											andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase3.getPersonagem(), null);
+										}
+										indice++;
+										
+									}
 									if(percursoHorizontal("esquerda")&(!checarColisaoLivros())&(!colidiuCristal())) {
 										mudarAparencia(this.fase3.getPersonagem(),"esquerda");
 									}else {
@@ -364,6 +449,15 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								//retangulosEsquerdaColidiuFase2.set(7, true);
 								retangulosDireitaColidiuFase2.set(7, true);
 									
+							}else if(indiceColisaoDireitaOuEsquerda==9) {
+								retangulosAbaixoColidiuFase2.set(2, false);
+								retangulosAcimaColidiuFase2.set(3, false);
+							}
+							else if(indiceColisaoDireitaOuEsquerda==10) {
+								retangulosAcimaColidiuFase2.set(3,true);
+								retangulosDireitaColidiuFase2.set(0, true);
+							}else if(indiceColisaoDireitaOuEsquerda==0) {
+								retangulosDireitaColidiuFase3.set(0, true);
 							}
 							else {
 								for(int i=0;i<5;i++) {
@@ -390,24 +484,27 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									r=true;
 								}
 							}
-							else if(fase3.isVisible()) {
-								retangulosEsquerdaColidiuFase3.set(0,true);
-								
-							}
+//							else if(fase3.isVisible()) {
+//								retangulosEsquerdaColidiuFase3.set(0,true);
+//								
+//							}
 							
 							while(direitaAndando) {
 								if(Dados.desafioAtivado) {
 									if(percursoHorizontal("direita")) {
 										if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getX()+20);
+											//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getX()+20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem(), "direita");
 											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getX()+20);
+											//this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getX()+20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem(), "direita");
 											this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getX()+20);
+											//this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getX()+20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem(), "direita");
 											this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}
@@ -418,6 +515,17 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									}
 									
 								}else if(fase1.isVisible()) {
+									int indice=0;
+									for (Inimigo inimigo:this.fase1.getInimigo()) {
+										if(fase1.getLivros().get(0).isPegouLivro()&indice==1) {
+											andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase1.getPersonagem(), null);
+										}
+										indice++;
+										
+									}
 									if(percursoHorizontal("direita")&(!checarColisaoLivros())&(!colidiuCristal())) {
 										mudarAparencia(this.fase1.getPersonagem(),"direita");
 									
@@ -427,6 +535,9 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									this.fase1.repaint();
 									Thread.sleep(200);
 								}else if(fase2.isVisible()) {
+									for (Inimigo inimigo:this.fase2.getInimigo()) {
+										andar(inimigo, this.fase2.getPersonagem(), null);
+									}
 									if(percursoHorizontal("direita")&(!checarColisaoLivros())&(!colidiuCristal())) {
 										mudarAparencia(this.fase2.getPersonagem(),"direita");
 									
@@ -436,6 +547,17 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									this.fase2.repaint();
 									Thread.sleep(200);
 								}else if(fase3.isVisible()) {
+									int indice = 0;
+									for (Inimigo inimigo:this.fase3.getInimigo()) {
+										if(fase3.getLivros().get(0).isPegouLivro()&indice==0) {
+											andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase3.getPersonagem(), null);
+										}
+										indice++;
+										
+									}
 									if(percursoHorizontal("direita")&(!checarColisaoLivros())&(!colidiuCristal())) {
 										mudarAparencia(this.fase3.getPersonagem(),"direita");
 									
@@ -454,22 +576,28 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								retangulosAbaixoColidiuFase2.set(3, false);
 								retangulosAbaixoColidiuFase2.set(0, true);
 							}else if(indiceColisaoDireitaOuEsquerda==9) {
+								retangulosEsquerdaColidiuFase2.set(0, true);
 								retangulosAcimaColidiuFase2.set(1, true);
-								retangulosAcimaColidiuFase2.set(0, false);
+								retangulosAcimaColidiuFase2.set(0, true);
 								retangulosAbaixoColidiuFase2.set(0, false);
 							}else if(indiceColisaoDireitaOuEsquerda==1) {
 								retangulosDireitaColidiuFase2.set(2, true);
 							}else if(indiceColisaoDireitaOuEsquerda==2) {
 								retangulosDireitaColidiuFase2.set(4, true);
+							}else if(indiceColisaoDireitaOuEsquerda==8) {
+								System.out.println("ALDMLKSAGNLNFPAEFJPWONFNMNVPÇSNVPÇ");
+								retangulosDireitaColidiuFase2.set(7, true);
 							}
 							else if(indiceColisaoDireitaOuEsquerda==7) {
 								retangulosDireitaColidiuFase2.set(5, true);
 								
 							}else if(indiceColisaoDireitaOuEsquerda==5) {
 								retangulosDireitaColidiuFase2.set(3, true);
+							}else if(indiceColisaoDireitaOuEsquerda==0) {
+								retangulosEsquerdaColidiuFase3.set(0, true);
 							}
 							else {
-								for(int i=0;i<4;i++) {
+								for(int i=0;i<5;i++) {
 									retangulosAcimaColidiuFase2.set(i, true);
 									retangulosAbaixoColidiuFase2.set(i, true);
 								}
@@ -496,16 +624,19 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									
 									if(percursoVertical("cima")) {
 										if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getY()-20);
+											//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getY()-20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem(), "cima");
 											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getY()-20);
+											//this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getY()-20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem(), "cima");
 											this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}
 										else if(Dados.desafio2Fase3Visivel||Dados.desafio1Fase3Visivel) {
-											this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getY()-20);
+											//this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getY()-20);
+											mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem(), "cima");
 											this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).repaint();
 											Thread.sleep(200);
 										}
@@ -517,6 +648,17 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									
 									
 								}else if(fase1.isVisible()) {
+									int indice=0;
+									for (Inimigo inimigo:this.fase1.getInimigo()) {
+										if(fase1.getLivros().get(0).isPegouLivro()&indice==1) {
+											andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase1.getPersonagem(), null);
+										}
+										indice++;
+										
+									}
 									if(percursoVertical("cima")&(!checarColisaoLivros())&(!colidiuCristal())) {
 										mudarAparencia(this.fase1.getPersonagem(),"cima");
 									}else {
@@ -525,6 +667,9 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									this.fase1.repaint();
 									Thread.sleep(200);
 								}else if(fase2.isVisible()) {
+									for (Inimigo inimigo:this.fase2.getInimigo()) {
+										andar(inimigo, this.fase2.getPersonagem(), null);
+									}
 									if(percursoVertical("cima")&(!checarColisaoLivros())&(!colidiuCristal())) {
 										mudarAparencia(this.fase2.getPersonagem(),"cima");
 									}else {
@@ -533,7 +678,18 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 									this.fase2.repaint();
 									Thread.sleep(200);
 								}else if(fase3.isVisible()) {
-									if(percursoVertical("cima")&(!checarColisaoLivros())) {
+									int indice = 0;
+									for (Inimigo inimigo:this.fase3.getInimigo()) {
+										if(fase3.getLivros().get(0).isPegouLivro()&indice==0) {
+											andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase3.getPersonagem(), null);
+										}
+										indice++;
+										
+									}
+									if(percursoVertical("cima")&(!checarColisaoLivros())&(!colidiuCristal())) {
 										mudarAparencia(this.fase3.getPersonagem(),"cima");
 									}else {
 										acimaAndando=false;
@@ -552,6 +708,8 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								retangulosEsquerdaColidiuFase2.set(7, false);
 								retangulosDireitaColidiuFase2.set(7, false);
 								retangulosDireitaColidiuFase2.set(5, true);
+							}else if(indiceColisaoAcimaOuAbaixo==3) {
+								retangulosDireitaColidiuFase2.set(8, true);
 							}
 							
 						}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("loop")) {
@@ -595,14 +753,16 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 											
 											this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).setVisible(true);
 											
-											this.inventario.preencherComandos(true);
+											this.inventario.preencherComandos(true,false);
 											ativarEventosDosComandosDoInventario();
-											
+											inicializarCoordenadasDoPercurso();
 											this.telaJogo.getContainerFase().repaint();
 										}
-									}else if(fase1.getCristal().isPegouCristal()) {//pegarCristal
+										this.exibirDesafio.show(true);
+									}else if(this.fase1.getCristal().isPegouCristal()&this.fase1.getCristal().isApareceuCristal()) {//pegarCristal
 										fase1.getCristal().setApareceuCristal(false);
-										//atualizar inventario
+										
+										colorirObjetivoPrincipal(Dados.QTD_CRISTAIS_FASE1);
 									}
 									
 								
@@ -634,13 +794,16 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 										
 										this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).setVisible(true);
 										
-										this.inventario.preencherComandos(true);
+										this.inventario.preencherComandos(true,false);
 										ativarEventosDosComandosDoInventario();
-										
+										inicializarCoordenadasDoPercurso();
 										this.telaJogo.getContainerFase().repaint();
+										this.exibirDesafio.show(true);
 									}
-								}else if(this.fase2.getCristal().isPegouCristal()) {
+								}else if(this.fase2.getCristal().isPegouCristal()&this.fase2.getCristal().isApareceuCristal()) {
 									fase2.getCristal().setApareceuCristal(false);
+									colorirObjetivoPrincipal(Dados.QTD_CRISTAIS_FASE2);
+									fase2.repaint();
 									//atualizar inventario
 
 								}
@@ -665,7 +828,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 										Dados.fase3Visivel=false;//
 										
 										if(numeroDesafio==0) {
-											System.out.println("peganooooo");
+											//System.out.println("peganooooo");
 											Dados.desafio2Fase3Visivel=true;
 										}else {
 											Dados.desafio1Fase3Visivel=true;
@@ -674,29 +837,31 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 										
 										this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).setVisible(true);
 										
-										this.inventario.preencherComandos(true);
+										this.inventario.preencherComandos(true,false);
 										ativarEventosDosComandosDoInventario();
-										
+										inicializarCoordenadasDoPercurso();
 										this.telaJogo.getContainerFase().repaint();
+										this.exibirDesafio.show(true);
 									}
 								}
 								for(Cristal c: fase3.getCristais()) {
-									if(this.fase1.getPersonagem().getRectangle().intersects(c.getRectangle())) {
-										c.setApareceuCristal(true);
+									if(c.isPegouCristal()&c.isApareceuCristal()) {
+										c.setApareceuCristal(false);
+										colorirObjetivoPrincipal(Dados.QTD_CRISTAIS_FASE1);
 										//atualizar inventario
 									}
 								}
 							}
-							inicializarCoordenadasDoPercurso();
+
 						}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("teleporte")) {
 							//verifucar desafios
 							if(Dados.desafioAtivado) {
-								Rectangle magia = new Rectangle();
+								Rectangle Personagem = new Rectangle();
 								Rectangle portalInicio = new Rectangle();
 								if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
-									magia=this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getRectangle();
+									Personagem=this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem().getRectangle();
 									portalInicio = this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getInicio().getRectangle();
-									if(magia.intersects(portalInicio)) {
+									if(Personagem.intersects(portalInicio)) {
 										Dados.desafioAtivado=false;
 										if(numeroDesafio==0) {
 											Dados.desafio1fase1Visivel=false;
@@ -714,15 +879,15 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 										this.inventarioHorizontal.getQuadroFuncao().removeAll();
 										this.inventarioHorizontal.setPosInicialMain(15);
 										this.inventarioHorizontal.setPosInicialFuncao(15);
-										this.inventario.preencherComandos(true);
+										this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
 										ativarEventosDosComandosDoInventario();
 										this.telaJogo.getContainerFase().repaint();
 										
 									}
 								}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
-									magia=this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getRectangle();
+									Personagem=this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem().getRectangle();
 									portalInicio = this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getInicio().getRectangle();
-									if(magia.intersects(portalInicio)) {
+									if(Personagem.intersects(portalInicio)) {
 										Dados.desafioAtivado=false;
 										if(numeroDesafio==0) {
 											Dados.desafio1Fase2Visivel=false;
@@ -739,17 +904,17 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 										this.inventarioHorizontal.getQuadroFuncao().removeAll();
 										this.inventarioHorizontal.setPosInicialMain(15);
 										this.inventarioHorizontal.setPosInicialFuncao(15);
-										this.inventario.preencherComandos(true);
+										this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
 										ativarEventosDosComandosDoInventario();
 										
 										this.telaJogo.getContainerFase().repaint();
 									}
 								
 								}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
-										System.out.println("aaaaaaa");
-										magia=this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getRectangle();
+										//System.out.println("aaaaaaa");
+										Personagem=this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem().getRectangle();
 										portalInicio = this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getInicio().getRectangle();
-										if(magia.intersects(portalInicio)) {
+										if(Personagem.intersects(portalInicio)) {
 											Dados.desafioAtivado=false;
 											if(numeroDesafio==0) {
 												Dados.desafio2Fase3Visivel=false;
@@ -766,7 +931,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 											this.inventarioHorizontal.getQuadroFuncao().removeAll();
 											this.inventarioHorizontal.setPosInicialMain(15);
 											this.inventarioHorizontal.setPosInicialFuncao(15);
-											this.inventario.preencherComandos(true);
+											this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
 											ativarEventosDosComandosDoInventario();
 											
 											this.telaJogo.getContainerFase().repaint();
@@ -775,6 +940,8 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 							}
 								
 							else if(fase1.getPersonagem().isMagiaTeleporte()) {
+								this.mapaDasFasesPanel.getFase2IconPanel().setIcon(new ImageIcon("imagens\\fase2.png"));
+								this.mapaDasFasesPanel.getFase3IconPanel().setIcon(new ImageIcon("imagens\\fase3.png"));
 								if(fase1.isVisible()) {
 									this.mapaDasFasesPanel.getBackFase().setBounds(18, 430, 219,200);
 									checarColisao(new Rectangle(320,440,80,40));
@@ -788,8 +955,118 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								
 								
 							}
-						}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("funcao")) {
-							
+						}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("congelar")) {
+							if(fase1.isVisible()) {
+								int indice=0;
+								for(Inimigo inimigo:fase1.getInimigo()) {
+									if(inimigo.getRetangulos()[4].intersects(fase1.getPersonagem().getRectangle())) {
+										if(indice==0||this.fase1.getLivros().get(0).isPegouLivro()) {
+											while(fase1.getPersonagem().getRectangle().intersects(inimigo.getRectangle())) {
+												int contador=0;
+												for (Inimigo i:this.fase1.getInimigo()) {
+													if(fase1.getLivros().get(0).isPegouLivro()&contador==1) {
+														andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+														livroSumiu=true;
+													}else {
+														andar(inimigo, this.fase1.getPersonagem(), null);
+													}
+													contador++;
+												}
+												if(indice==0) {
+													if(inimigo.getX()>fase2.getPersonagem().getX()) {
+														fase2.getPersonagem().setAparencia(3);
+													}else{
+														fase2.getPersonagem().setAparencia(6);
+													}
+												}else {
+													if(inimigo.getY()<fase2.getPersonagem().getY()) {
+														fase2.getPersonagem().setAparencia(9);
+													}
+												}
+												
+												this.fase1.repaint();
+												Thread.sleep(200);
+											}
+											inimigo.setAparecer(false);
+											fase1.repaint();
+											Thread.sleep(200);
+											
+										}else {
+											Thread.sleep(200);
+										}
+
+										break;								
+									}
+									indice++;
+								}
+							}else if(fase2.isVisible()) {
+								int indice=0;
+								for(Inimigo inimigo:fase2.getInimigo()) {
+									if(inimigo.getRetangulos()[4].intersects(fase2.getPersonagem().getRectangle())) {
+										
+										while(!fase2.getPersonagem().getRectangle().intersects(inimigo.getRectangle())) {
+											for (Inimigo i:this.fase2.getInimigo()) {
+												andar(i, this.fase2.getPersonagem(), null);
+												
+											}
+											if(inimigo.getX()>fase2.getPersonagem().getX()) {
+												fase2.getPersonagem().setAparencia(3);
+											}else {
+												fase2.getPersonagem().setAparencia(6);
+											}
+											this.fase2.repaint();
+											Thread.sleep(200);
+										}
+										inimigo.setAparecer(true);
+										fase2.repaint();
+										Thread.sleep(200);
+										break;
+										
+									}
+										//									
+									
+								}
+							}else if(fase3.isVisible()) {
+								int indice=0;
+								for(Inimigo inimigo:fase3.getInimigo()) {
+									if(inimigo.getRetangulos()[4].intersects(fase3.getPersonagem().getRectangle())) {
+										if(indice==0||(this.fase3.getLivros().get(0).isPegouLivro())) {
+											while(fase3.getPersonagem().getRectangle().intersects(inimigo.getRectangle())) {
+												int contador =0;
+												for (Inimigo i:this.fase3.getInimigo()) {
+													if(fase3.getLivros().get(0).isPegouLivro()&contador==0) {
+														andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+														livroSumiu=true;
+													}else {
+														andar(inimigo, this.fase3.getPersonagem(), null);
+													}
+													contador++;
+												}
+												if(inimigo.getY()>fase2.getPersonagem().getY()) {
+													fase2.getPersonagem().setAparencia(0);
+												}else {
+													fase2.getPersonagem().setAparencia(3);
+												}
+												this.fase3.repaint();
+												Thread.sleep(200);
+											}
+											inimigo.setAparecer(false);
+											fase3.repaint();
+											Thread.sleep(200);
+											break;
+										}else {
+											Thread.sleep(200);
+										}
+
+										//									
+									}
+									indice++;
+								}
+							}
+						}
+						
+						else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("funcao")) {
+							lerFuncao();
 						}
 						index++;
 					}
@@ -797,29 +1074,46 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 					this.inventarioHorizontal.getQuadroFuncao().removeAll();
 					this.inventarioHorizontal.setPosInicialMain(15);
 					this.inventarioHorizontal.setPosInicialFuncao(15);
-					this.inventario.preencherComandos(this.fase1.getPersonagem().isMagiaTeleporte());
+					this.inventario.preencherComandos(this.fase1.getPersonagem().isMagiaTeleporte(),this.fase2.getPersonagem().isMagiaAtaque());
 					ativarEventosDosComandosDoInventario();
 					this.executando=false;
 					this.telaJogo.getContainerFase().getJogarLabel().setIcon(new ImageIcon("imagens\\caldeirao.png"));
 					this.index=0;
+					//aki inimigos
 					this.telaJogo.getContainerFase().repaint();
 				}else if(Dados.desafioAtivado&(!concluiuDesafio)) {//PERDER VIDA CASO NÃO CONCLUA O DESAFIO
 					if(numeroDesafio>=0) {
 						concluiuDesafio=true;
-						this.inventario.getLifeBar().setValue(this.inventario.getLifeBar().getValue()-10);
+						if(this.inventario.getLifeBar().getValue()<10) {
+							this.inventario.getLifeBar().setValue(0);
+						}else {
+							this.inventario.getLifeBar().setValue(this.inventario.getLifeBar().getValue()-10);
+						}
 					}
 				}
 				else if(this.iniciarJogo.isVisible()) {//EVITA QUE O NOME DO JOGADOR FIQUE CONGELADO
 					this.iniciarJogo.repaint();
 				}else if(this.mapaDasFasesPanel.isVisible()) {
 					movimentarReinos();
-				}else if(this.fase1.isVisible()) {
+				}else if(this.fase1.isVisible()) {//aqui
+					for (Inimigo inimigo:this.fase1.getInimigo()) {
+						andar(inimigo, this.fase1.getPersonagem(), null);
+					}
+					
 					this.fase1.repaint();
-					Thread.sleep(500);
-				}else if(this.fase2.isVisible()) {
+					Thread.sleep(200);
+				}else if(this.fase2.isVisible()) {//aqui
+					for (Inimigo inimigo:this.fase2.getInimigo()) {
+						andar(inimigo, this.fase2.getPersonagem(), null);
+					}
 					this.fase2.repaint();
-				}else if(this.fase3.isVisible()) {
+					Thread.sleep(200);
+				}else if(this.fase3.isVisible()) {//aqui
+					for (Inimigo inimigo:this.fase3.getInimigo()) {
+						andar(inimigo, this.fase3.getPersonagem(), null);
+					}
 					this.fase3.repaint();
+					Thread.sleep(200);
 				}
 				Thread.sleep(50);
 				
@@ -829,6 +1123,1293 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			}
 		}
 	}
+	
+	public void lerFuncao() throws InterruptedException {
+		int index=0;
+		while(index<this.inventarioHorizontal.getQuadroFuncao().getComponentCount()) {
+			JLabel jl=(JLabel) this.inventarioHorizontal.getQuadroFuncao().getComponent(index);
+			if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("baixo")) {
+				baixoAndando=true;
+				
+				if(fase2.isVisible()) {
+					for(Boolean b:retangulosAcimaColidiuFase2) {
+						b=true;
+					}
+					
+					
+				}
+				
+				while(baixoAndando) {
+					if(Dados.desafioAtivado) {
+						if(percursoVertical("baixo")) {
+							if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getY()+20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem(), "baixo");
+								this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getY()+20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem(), "baixo");
+								this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
+							//	this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getY()+20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem(), "baixo");
+								this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}
+							
+						
+						}else {
+							finalizouDesafio();
+							baixoAndando=false;
+						}
+						
+					}else if(fase1.isVisible()) {
+						//FASE 1
+						int indice=0;
+						for (Inimigo inimigo:this.fase1.getInimigo()) {
+							if(fase1.getLivros().get(0).isPegouLivro()&indice==1) {
+								andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+								livroSumiu=true;
+							}else {
+								andar(inimigo, this.fase1.getPersonagem(), null);
+							}
+							indice++;
+							
+						}
+						if(percursoVertical("baixo")&(!checarColisaoLivros())) {
+							mudarAparencia(this.fase1.getPersonagem(),"baixo");
+							
+						}else {
+							baixoAndando=false;
+						}
+						this.fase1.repaint();
+						Thread.sleep(200);
+					}else if(fase2.isVisible()) {
+						//FASE 2
+						for (Inimigo inimigo:this.fase2.getInimigo()) {
+							andar(inimigo, this.fase2.getPersonagem(), null);
+						}
+						if(percursoVertical("baixo")) {
+							mudarAparencia(this.fase2.getPersonagem(),"baixo");
+							
+						}else {
+							baixoAndando=false;
+						}
+						this.fase2.repaint();
+						Thread.sleep(200);
+						
+					}else if(fase3.isVisible()) {
+						//FASE 3
+						int indice = 0;
+						for (Inimigo inimigo:this.fase3.getInimigo()) {
+							if(fase3.getLivros().get(0).isPegouLivro()&indice==0) {
+								andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+								livroSumiu=true;
+							}else {
+								andar(inimigo, this.fase3.getPersonagem(), null);
+							}
+							indice++;
+							
+						}
+						if(percursoVertical("baixo")) {
+							mudarAparencia(this.fase3.getPersonagem(),"baixo");
+							
+						}else {
+							baixoAndando=false;
+						}
+						this.fase3.repaint();
+						Thread.sleep(200);
+					}
+				}
+				frente=0;
+				if(indiceColisaoAcimaOuAbaixo==6) {
+					retangulosDireitaColidiuFase2.set(4, true);
+					retangulosEsquerdaColidiuFase2.set(6, true);
+					retangulosEsquerdaColidiuFase2.set(0, true);
+				}else if(indiceColisaoAcimaOuAbaixo==4) {
+					retangulosDireitaColidiuFase2.set(1, true);
+				}else if(indiceColisaoAcimaOuAbaixo==10) {
+					retangulosDireitaColidiuFase2.set(3, true);
+					retangulosDireitaColidiuFase2.set(5, false);
+					retangulosEsquerdaColidiuFase2.set(1, true);
+					retangulosEsquerdaColidiuFase2.set(2, false);
+				}else if(indiceColisaoAcimaOuAbaixo==3) {
+					retangulosEsquerdaColidiuFase2.set(2, true);
+					retangulosEsquerdaColidiuFase2.set(4, false);
+					retangulosDireitaColidiuFase2.set(3, false);
+				}else if(indiceColisaoAcimaOuAbaixo==8) {
+					//System.out.println("asjkajkladakllaNFLAFN");
+					retangulosDireitaColidiuFase2.set(0, true);
+				}else if(indiceColisaoAcimaOuAbaixo==2) {
+					System.out.println("mshcbak.svlbevnlçenvçqnçn çd nql.nvlq");
+					retangulosDireitaColidiuFase3.set(0, false);
+					retangulosEsquerdaColidiuFase3.set(0, false);
+				}
+			}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("esquerda")) {
+				esquerdaAndando=true;
+				opostoDireita=true;
+				
+				if(fase1.isVisible()) {
+					retangulosDireitaColidiuFase1.set(0,true);
+					retangulosDireitaColidiuFase1.set(1,true);
+				}else if(fase2.isVisible()) {
+					for(Boolean r:retangulosDireitaColidiuFase2) {
+						r=true;
+					}
+					for(Boolean r:retangulosAcimaColidiuFase2) {
+						r=true;
+					}
+					for(Boolean r:retangulosAbaixoColidiuFase2) {
+						r=true;
+					}
+					
+				}
+				
+				while(esquerdaAndando) {
+					if(Dados.desafioAtivado) {
+						if(percursoHorizontal("esquerda")) {
+							if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getX()-20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem(), "esquerda");
+								this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem(), "esquerda");
+							//	this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getX()-20);
+								this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getX()-20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem(), "esquerda");
+								this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}
+							
+						}else {
+							finalizouDesafio();
+							esquerdaAndando=false;
+						}
+//						if(numeroDesafio>=0) {
+//							
+			//			}
+					}else if(fase1.isVisible()) {
+						int indice=0;
+						for (Inimigo inimigo:this.fase1.getInimigo()) {
+							if(fase1.getLivros().get(0).isPegouLivro()&indice==1) {
+								andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+								livroSumiu=true;
+							}else {
+								andar(inimigo, this.fase1.getPersonagem(), null);
+							}
+							indice++;
+							
+						}
+						if(percursoHorizontal("esquerda")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							mudarAparencia(this.fase1.getPersonagem(),"esquerda");
+						}else {
+							//finalizouDesafio();
+							esquerdaAndando=false;
+						}
+						this.fase1.repaint();
+						Thread.sleep(200);
+					}else if(fase2.isVisible()) {
+					//	System.out.println("olaaa");
+						for (Inimigo inimigo:this.fase2.getInimigo()) {
+							andar(inimigo, this.fase2.getPersonagem(), null);
+						}
+					//	System.out.println(percursoHorizontal("esquerda"));
+						if(percursoHorizontal("esquerda")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							//System.out.println("homiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii");
+							mudarAparencia(this.fase2.getPersonagem(),"esquerda");
+						}else {
+							//finalizouDesafio();
+							esquerda=6;
+							esquerdaAndando=false;
+						}
+						this.fase2.repaint();
+						Thread.sleep(200);
+					}else if(fase3.isVisible()) {
+						int indice = 0;
+						for (Inimigo inimigo:this.fase3.getInimigo()) {
+							if(fase3.getLivros().get(0).isPegouLivro()&indice==0) {
+								andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+								livroSumiu=true;
+							}else {
+								andar(inimigo, this.fase3.getPersonagem(), null);
+							}
+							indice++;
+							
+						}
+						if(percursoHorizontal("esquerda")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							mudarAparencia(this.fase3.getPersonagem(),"esquerda");
+						}else {
+							//finalizouDesafio();
+							esquerdaAndando=false;
+						}
+						this.fase3.repaint();
+						Thread.sleep(200);
+					}
+				}
+				esquerda=6;
+				if(indiceColisaoDireitaOuEsquerda==8) {
+					retangulosAbaixoColidiuFase2.set(2, false);
+					retangulosAcimaColidiuFase2.set(3, false);
+				}else if(indiceColisaoDireitaOuEsquerda==4) {
+					retangulosEsquerdaColidiuFase2.set(2, true);
+					retangulosAcimaColidiuFase2.set(1, false);
+					retangulosAcimaColidiuFase2.set(2, false);
+					retangulosAbaixoColidiuFase2.set(1, false);
+					retangulosAbaixoColidiuFase2.set(3, false);
+					retangulosAbaixoColidiuFase2.set(0, true);
+				}else if(indiceColisaoDireitaOuEsquerda==1) {
+					retangulosDireitaColidiuFase2.set(7, true);
+					
+				}else if(indiceColisaoDireitaOuEsquerda==7) {
+					retangulosEsquerdaColidiuFase2.set(1, true);
+				}
+				else if(indiceColisaoDireitaOuEsquerda==2) {
+					//retangulosEsquerdaColidiuFase2.set(7, true);
+					retangulosDireitaColidiuFase2.set(7, true);
+						
+				}else if(indiceColisaoDireitaOuEsquerda==9) {
+					retangulosAbaixoColidiuFase2.set(2, false);
+					retangulosAcimaColidiuFase2.set(3, false);
+				}
+				else if(indiceColisaoDireitaOuEsquerda==10) {
+					retangulosAcimaColidiuFase2.set(3,true);
+					retangulosDireitaColidiuFase2.set(0, true);
+				}else if(indiceColisaoDireitaOuEsquerda==0) {
+					retangulosDireitaColidiuFase3.set(0, true);
+				}
+				else {
+					for(int i=0;i<5;i++) {
+						retangulosAbaixoColidiuFase2.set(i,true);
+						retangulosAcimaColidiuFase2.set(i, true);
+					}
+				}
+			}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("direita")) {
+				direitaAndando=true;
+				opostoEsquerda=true;
+				
+				//USADO PARA A COLISÃO EM CAMPOS ABERTOS
+				if(fase1.isVisible()) {
+					retangulosEsquerdaColidiuFase1.set(0,true);
+					retangulosEsquerdaColidiuFase1.set(1,true);
+				}else if(fase2.isVisible()) {
+					for(Boolean r:retangulosEsquerdaColidiuFase2) {
+						r=true;
+					}
+					for(Boolean r:retangulosAcimaColidiuFase2) {
+						r=true;
+					}
+					for(Boolean r:retangulosAbaixoColidiuFase2) {
+						r=true;
+					}
+				}
+//				else if(fase3.isVisible()) {
+//					retangulosEsquerdaColidiuFase3.set(0,true);
+//					
+//				}
+				
+				while(direitaAndando) {
+					if(Dados.desafioAtivado) {
+						if(percursoHorizontal("direita")) {
+							if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getX()+20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem(), "direita");
+								this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getX()+20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem(), "direita");
+								this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setX(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getX()+20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem(), "direita");
+								this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}
+							
+						}else {
+							finalizouDesafio();
+							direitaAndando=false;
+						}
+						
+					}else if(fase1.isVisible()) {
+						int indice=0;
+						for (Inimigo inimigo:this.fase1.getInimigo()) {
+							if(fase1.getLivros().get(0).isPegouLivro()&indice==1) {
+								andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+								livroSumiu=true;
+							}else {
+								andar(inimigo, this.fase1.getPersonagem(), null);
+							}
+							indice++;
+							
+						}
+						if(percursoHorizontal("direita")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							mudarAparencia(this.fase1.getPersonagem(),"direita");
+						
+						}else {
+							direitaAndando=false;
+						}
+						this.fase1.repaint();
+						Thread.sleep(200);
+					}else if(fase2.isVisible()) {
+						for (Inimigo inimigo:this.fase2.getInimigo()) {
+							andar(inimigo, this.fase2.getPersonagem(), null);
+						}
+						if(percursoHorizontal("direita")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							mudarAparencia(this.fase2.getPersonagem(),"direita");
+						
+						}else {
+							direitaAndando=false;
+						}
+						this.fase2.repaint();
+						Thread.sleep(200);
+					}else if(fase3.isVisible()) {
+						int indice = 0;
+						for (Inimigo inimigo:this.fase3.getInimigo()) {
+							if(fase3.getLivros().get(0).isPegouLivro()&indice==0) {
+								andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+								livroSumiu=true;
+							}else {
+								andar(inimigo, this.fase3.getPersonagem(), null);
+							}
+							indice++;
+							
+						}
+						if(percursoHorizontal("direita")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							mudarAparencia(this.fase3.getPersonagem(),"direita");
+						
+						}else {
+							direitaAndando=false;
+						}
+						this.fase3.repaint();
+						Thread.sleep(200);
+					}
+				}
+				direita=3;
+				if(indiceColisaoDireitaOuEsquerda==11||indiceColisaoDireitaOuEsquerda==3) {
+					retangulosAcimaColidiuFase2.set(1, false);
+					retangulosAcimaColidiuFase2.set(2, false);
+					retangulosAbaixoColidiuFase2.set(1, false);
+					retangulosAbaixoColidiuFase2.set(3, false);
+					retangulosAbaixoColidiuFase2.set(0, true);
+				}else if(indiceColisaoDireitaOuEsquerda==9) {
+					retangulosEsquerdaColidiuFase2.set(0, true);
+					retangulosAcimaColidiuFase2.set(1, true);
+					retangulosAcimaColidiuFase2.set(0, true);
+					retangulosAbaixoColidiuFase2.set(0, false);
+				}else if(indiceColisaoDireitaOuEsquerda==1) {
+					retangulosDireitaColidiuFase2.set(2, true);
+				}else if(indiceColisaoDireitaOuEsquerda==2) {
+					retangulosDireitaColidiuFase2.set(4, true);
+				}else if(indiceColisaoDireitaOuEsquerda==8) {
+					System.out.println("ALDMLKSAGNLNFPAEFJPWONFNMNVPÇSNVPÇ");
+					retangulosDireitaColidiuFase2.set(7, true);
+				}
+				else if(indiceColisaoDireitaOuEsquerda==7) {
+					retangulosDireitaColidiuFase2.set(5, true);
+					
+				}else if(indiceColisaoDireitaOuEsquerda==5) {
+					retangulosDireitaColidiuFase2.set(3, true);
+				}else if(indiceColisaoDireitaOuEsquerda==0) {
+					retangulosEsquerdaColidiuFase3.set(0, true);
+				}
+				else {
+					for(int i=0;i<5;i++) {
+						retangulosAcimaColidiuFase2.set(i, true);
+						retangulosAbaixoColidiuFase2.set(i, true);
+					}
+				}
+			}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("cima")) {
+				acimaAndando=true;
+				if(fase2.isVisible()) {
+					for(Boolean b:retangulosAbaixoColidiuFase2) {
+						b=true;
+					}
+				}
+				opostoDireitaAcima=true;
+				opostoEsquerdaAcima=true;
+				if(fase2.isVisible()) {
+					retangulosEsquerdaColidiuFase2.set(2, true);
+
+					retangulosDireitaColidiuFase2.set(2, true);
+					retangulosDireitaColidiuFase2.set(4, true);
+					
+					
+				}
+				while(acimaAndando) {
+					if(Dados.desafioAtivado) {
+						
+						if(percursoVertical("cima")) {
+							if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia().getY()-20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem(), "cima");
+								this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia().getY()-20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem(), "cima");
+								this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}
+							else if(Dados.desafio2Fase3Visivel||Dados.desafio1Fase3Visivel) {
+								//this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().setY(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia().getY()-20);
+								mudarAparencia(this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem(), "cima");
+								this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).repaint();
+								Thread.sleep(200);
+							}
+							
+						}else {
+							finalizouDesafio();
+							acimaAndando=false;
+						}
+						
+						
+					}else if(fase1.isVisible()) {
+						int indice=0;
+						for (Inimigo inimigo:this.fase1.getInimigo()) {
+							if(fase1.getLivros().get(0).isPegouLivro()&indice==1) {
+								andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+								livroSumiu=true;
+							}else {
+								andar(inimigo, this.fase1.getPersonagem(), null);
+							}
+							indice++;
+							
+						}
+						if(percursoVertical("cima")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							mudarAparencia(this.fase1.getPersonagem(),"cima");
+						}else {
+							acimaAndando=false;
+						}
+						this.fase1.repaint();
+						Thread.sleep(200);
+					}else if(fase2.isVisible()) {
+						for (Inimigo inimigo:this.fase2.getInimigo()) {
+							andar(inimigo, this.fase2.getPersonagem(), null);
+						}
+						if(percursoVertical("cima")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							mudarAparencia(this.fase2.getPersonagem(),"cima");
+						}else {
+							acimaAndando=false;
+						}
+						this.fase2.repaint();
+						Thread.sleep(200);
+					}else if(fase3.isVisible()) {
+						int indice = 0;
+						for (Inimigo inimigo:this.fase3.getInimigo()) {
+							if(fase3.getLivros().get(0).isPegouLivro()&indice==0) {
+								andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+								livroSumiu=true;
+							}else {
+								andar(inimigo, this.fase3.getPersonagem(), null);
+							}
+							indice++;
+							
+						}
+						if(percursoVertical("cima")&(!checarColisaoLivros())&(!colidiuCristal())) {
+							mudarAparencia(this.fase3.getPersonagem(),"cima");
+						}else {
+							acimaAndando=false;
+						}
+						this.fase3.repaint();
+						Thread.sleep(200);
+					}
+				}
+				costa=9;
+				if(indiceColisaoAcimaOuAbaixo==2) {
+					retangulosDireitaColidiuFase2.set(3, false);
+					retangulosEsquerdaColidiuFase2.set(4, false);
+					retangulosEsquerdaColidiuFase2.set(2, true);
+				}else if(indiceColisaoAcimaOuAbaixo==6) {
+					retangulosEsquerdaColidiuFase2.set(1, true);
+					retangulosEsquerdaColidiuFase2.set(7, false);
+					retangulosDireitaColidiuFase2.set(7, false);
+					retangulosDireitaColidiuFase2.set(5, true);
+				}else if(indiceColisaoAcimaOuAbaixo==3) {
+					retangulosDireitaColidiuFase2.set(8, true);
+				}
+				
+			}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("loop")) {
+				if(!repetir) {
+					index=-1;
+					repetir=true;
+
+				}else {
+					
+					repetir=false;
+					if(index+1==this.inventarioHorizontal.getQuadroPrincipal().getComponentCount()) {
+						break;
+					}
+				}
+			}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("pegar")) {
+				if(fase1.isVisible()) {
+					
+						if(numeroDesafio>=0) {//SIGNIFICA QUE O PERSONAGEM PEGOU UM LIVRO
+							if(!fase1.getLivros().get(numeroDesafio).isPegouLivro()) {
+								this.fase1.setVisible(false);				
+								
+								//INFORMAR QUE UM DESAFIO ESTA VISIVEL E MUDAR OS RETANGULOS DE COLISÃO
+								Dados.desafioAtivado=true;
+
+								this.inventario.getQuadroComandos().removeAll();
+								this.inventario.getComandos().removeAll(this.inventario.getComandos());
+								this.inventario.getQtdComandos().removeAll(this.inventario.getQtdComandos());
+								this.inventarioHorizontal.getQuadroPrincipal().removeAll();
+								
+								this.inventarioHorizontal.setPosInicialFuncao(15);
+								this.inventarioHorizontal.setPosInicialMain(15);
+								
+								//UTILIZADOS PARA EXIBIR A QUANTIDADE DE COMANDOS NECESSARIOS PARA CADA FASE OU DESAFIO
+								Dados.fase1Visivel=false;//
+								if(numeroDesafio==0) {
+									Dados.desafio1fase1Visivel=true;
+								}else {
+									Dados.desafio2Fase1visivel=true;
+								}
+								
+								
+								this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).setVisible(true);
+								
+								this.inventario.preencherComandos(true,false);
+								ativarEventosDosComandosDoInventario();
+								inicializarCoordenadasDoPercurso();
+								this.telaJogo.getContainerFase().repaint();
+							}
+							this.exibirDesafio.show(true);
+						}else if(this.fase1.getCristal().isPegouCristal()&this.fase1.getCristal().isApareceuCristal()) {//pegarCristal
+							fase1.getCristal().setApareceuCristal(false);
+							
+							colorirObjetivoPrincipal(Dados.QTD_CRISTAIS_FASE1);
+						}
+						
+					
+				}else if(fase2.isVisible()) {
+					if(numeroDesafio>=0) {//SIGNIFICA QUE O PERSONAGEM PEGOU UM LIVRO
+						if(!fase2.getLivros().get(numeroDesafio).isPegouLivro()) {
+							this.fase2.setVisible(false);				
+							
+							//INFORMAR QUE UM DESAFIO ESTA VISIVEL E MUDAR OS RETANGULOS DE COLISÃO
+							Dados.desafioAtivado=true;
+
+							this.inventario.getQuadroComandos().removeAll();
+							this.inventario.getComandos().removeAll(this.inventario.getComandos());
+							this.inventario.getQtdComandos().removeAll(this.inventario.getQtdComandos());
+							this.inventarioHorizontal.getQuadroPrincipal().removeAll();
+							
+							this.inventarioHorizontal.setPosInicialFuncao(15);
+							this.inventarioHorizontal.setPosInicialMain(15);
+							
+							//UTILIZADOS PARA EXIBIR A QUANTIDADE DE COMANDOS NECESSARIOS PARA CADA FASE OU DESAFIO
+							Dados.fase2Visivel=false;//
+							
+							if(numeroDesafio==0) {
+								Dados.desafio1Fase2Visivel=true;
+							}else {
+								Dados.desafio2Fase2Visivel=true;
+							}
+							
+							
+							this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).setVisible(true);
+							
+							this.inventario.preencherComandos(true,false);
+							ativarEventosDosComandosDoInventario();
+							inicializarCoordenadasDoPercurso();
+							this.telaJogo.getContainerFase().repaint();
+							this.exibirDesafio.show(true);
+						}
+					}else if(this.fase2.getCristal().isPegouCristal()&this.fase2.getCristal().isApareceuCristal()) {
+						fase2.getCristal().setApareceuCristal(false);
+						colorirObjetivoPrincipal(Dados.QTD_CRISTAIS_FASE2);
+						fase2.repaint();
+						//atualizar inventario
+
+					}
+				}else if(fase3.isVisible()) {
+					if(numeroDesafio>=0) {//SIGNIFICA QUE O PERSONAGEM PEGOU UM LIVRO
+						if(!fase3.getLivros().get(numeroDesafio).isPegouLivro()) {
+							
+							this.fase3.setVisible(false);				
+							
+							//INFORMAR QUE UM DESAFIO ESTA VISIVEL E MUDAR OS RETANGULOS DE COLISÃO
+							Dados.desafioAtivado=true;
+
+							this.inventario.getQuadroComandos().removeAll();
+							this.inventario.getComandos().removeAll(this.inventario.getComandos());
+							this.inventario.getQtdComandos().removeAll(this.inventario.getQtdComandos());
+							this.inventarioHorizontal.getQuadroPrincipal().removeAll();
+							
+							this.inventarioHorizontal.setPosInicialFuncao(15);
+							this.inventarioHorizontal.setPosInicialMain(15);
+							
+							//UTILIZADOS PARA EXIBIR A QUANTIDADE DE COMANDOS NECESSARIOS PARA CADA FASE OU DESAFIO
+							Dados.fase3Visivel=false;//
+							
+							if(numeroDesafio==0) {
+								//System.out.println("peganooooo");
+								Dados.desafio2Fase3Visivel=true;
+							}else {
+								Dados.desafio1Fase3Visivel=true;
+							}
+							
+							
+							this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).setVisible(true);
+							
+							this.inventario.preencherComandos(true,false);
+							ativarEventosDosComandosDoInventario();
+							inicializarCoordenadasDoPercurso();
+							this.telaJogo.getContainerFase().repaint();
+							this.exibirDesafio.show(true);
+						}
+					}
+					for(Cristal c: fase3.getCristais()) {
+						if(c.isPegouCristal()&c.isApareceuCristal()) {
+							c.setApareceuCristal(false);
+							colorirObjetivoPrincipal(Dados.QTD_CRISTAIS_FASE1);
+							//atualizar inventario
+						}
+					}
+				}
+
+			}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("teleporte")) {
+				//verifucar desafios
+				if(Dados.desafioAtivado) {
+					Rectangle Personagem = new Rectangle();
+					Rectangle portalInicio = new Rectangle();
+					if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
+						Personagem=this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem().getRectangle();
+						portalInicio = this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getInicio().getRectangle();
+						if(Personagem.intersects(portalInicio)) {
+							Dados.desafioAtivado=false;
+							if(numeroDesafio==0) {
+								Dados.desafio1fase1Visivel=false;
+							}else {
+								Dados.desafio2Fase1visivel=false;
+							}
+							Dados.fase1Visivel=true;
+							
+							this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).setVisible(false);
+							this.fase1.setVisible(true);
+							this.inventario.getQuadroComandos().removeAll();
+							this.inventario.getQtdComandos().removeAll(this.inventario.getQtdComandos());
+							this.inventario.getComandos().removeAll(this.inventario.getComandos());
+							this.inventarioHorizontal.getQuadroPrincipal().removeAll();
+							this.inventarioHorizontal.getQuadroFuncao().removeAll();
+							this.inventarioHorizontal.setPosInicialMain(15);
+							this.inventarioHorizontal.setPosInicialFuncao(15);
+							this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
+							ativarEventosDosComandosDoInventario();
+							this.telaJogo.getContainerFase().repaint();
+							
+						}
+					}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
+						Personagem=this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem().getRectangle();
+						portalInicio = this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getInicio().getRectangle();
+						if(Personagem.intersects(portalInicio)) {
+							Dados.desafioAtivado=false;
+							if(numeroDesafio==0) {
+								Dados.desafio1Fase2Visivel=false;
+							}else {
+								Dados.desafio2Fase2Visivel=false;
+							}
+							Dados.fase2Visivel=true;
+							this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).setVisible(false);
+							this.fase2.setVisible(true);
+							this.inventario.getQuadroComandos().removeAll();
+							this.inventario.getQtdComandos().removeAll(this.inventario.getQtdComandos());
+							this.inventario.getComandos().removeAll(this.inventario.getComandos());
+							this.inventarioHorizontal.getQuadroPrincipal().removeAll();
+							this.inventarioHorizontal.getQuadroFuncao().removeAll();
+							this.inventarioHorizontal.setPosInicialMain(15);
+							this.inventarioHorizontal.setPosInicialFuncao(15);
+							this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
+							ativarEventosDosComandosDoInventario();
+							
+							this.telaJogo.getContainerFase().repaint();
+						}
+					
+					}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
+							//System.out.println("aaaaaaa");
+							Personagem=this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem().getRectangle();
+							portalInicio = this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getInicio().getRectangle();
+							if(Personagem.intersects(portalInicio)) {
+								Dados.desafioAtivado=false;
+								if(numeroDesafio==0) {
+									Dados.desafio2Fase3Visivel=false;
+								}else {
+									Dados.desafio1Fase3Visivel=false;
+								}
+								Dados.fase3Visivel=true;
+								this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).setVisible(false);
+								this.fase3.setVisible(true);
+								this.inventario.getQuadroComandos().removeAll();
+								this.inventario.getQtdComandos().removeAll(this.inventario.getQtdComandos());
+								this.inventario.getComandos().removeAll(this.inventario.getComandos());
+								this.inventarioHorizontal.getQuadroPrincipal().removeAll();
+								this.inventarioHorizontal.getQuadroFuncao().removeAll();
+								this.inventarioHorizontal.setPosInicialMain(15);
+								this.inventarioHorizontal.setPosInicialFuncao(15);
+								this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
+								ativarEventosDosComandosDoInventario();
+								
+								this.telaJogo.getContainerFase().repaint();
+							}
+					}
+				}
+					
+				else if(fase1.getPersonagem().isMagiaTeleporte()) {
+					this.mapaDasFasesPanel.getFase2IconPanel().setIcon(new ImageIcon("imagens\\fase2.png"));
+					this.mapaDasFasesPanel.getFase3IconPanel().setIcon(new ImageIcon("imagens\\fase3.png"));
+					if(fase1.isVisible()) {
+						this.mapaDasFasesPanel.getBackFase().setBounds(18, 430, 219,200);
+						checarColisao(new Rectangle(320,440,80,40));
+					}else if(fase2.isVisible()) {
+						this.mapaDasFasesPanel.getBackFase().setBounds(314, 330, 219, 200);
+						checarColisao(new Rectangle(260,460,80,40));
+					}else if(fase3.isVisible()) {
+						this.mapaDasFasesPanel.getBackFase().setBounds(622, 430, 219, 200);
+						checarColisao(new Rectangle(480,30,80,40));
+					}
+					
+					
+				}
+			}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("congelar")) {
+				if(fase1.isVisible()) {
+					int indice=0;
+					for(Inimigo inimigo:fase1.getInimigo()) {
+						if(inimigo.getRetangulos()[4].intersects(fase1.getPersonagem().getRectangle())) {
+							if(indice==0||this.fase1.getLivros().get(0).isPegouLivro()) {
+								while(fase1.getPersonagem().getRectangle().intersects(inimigo.getRectangle())) {
+									int contador=0;
+									for (Inimigo i:this.fase1.getInimigo()) {
+										if(fase1.getLivros().get(0).isPegouLivro()&contador==1) {
+											andar(inimigo, this.fase1.getPersonagem(), fase1.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase1.getPersonagem(), null);
+										}
+										contador++;
+									}
+									if(indice==0) {
+										if(inimigo.getX()>fase2.getPersonagem().getX()) {
+											fase2.getPersonagem().setAparencia(3);
+										}else{
+											fase2.getPersonagem().setAparencia(6);
+										}
+									}else {
+										if(inimigo.getY()<fase2.getPersonagem().getY()) {
+											fase2.getPersonagem().setAparencia(9);
+										}
+									}
+									
+									this.fase1.repaint();
+									Thread.sleep(200);
+								}
+								inimigo.setAparecer(false);
+								fase1.repaint();
+								Thread.sleep(200);
+								
+							}else {
+								Thread.sleep(200);
+							}
+
+							break;								
+						}
+						indice++;
+					}
+				}else if(fase2.isVisible()) {
+					int indice=0;
+					for(Inimigo inimigo:fase2.getInimigo()) {
+						if(inimigo.getRetangulos()[4].intersects(fase2.getPersonagem().getRectangle())) {
+							
+							while(!fase2.getPersonagem().getRectangle().intersects(inimigo.getRectangle())) {
+								for (Inimigo i:this.fase2.getInimigo()) {
+									andar(i, this.fase2.getPersonagem(), null);
+									
+								}
+								if(inimigo.getX()>fase2.getPersonagem().getX()) {
+									fase2.getPersonagem().setAparencia(3);
+								}else {
+									fase2.getPersonagem().setAparencia(6);
+								}
+								this.fase2.repaint();
+								Thread.sleep(200);
+							}
+							inimigo.setAparecer(true);
+							fase2.repaint();
+							Thread.sleep(200);
+							break;
+							
+						}
+							//									
+						
+					}
+				}else if(fase3.isVisible()) {
+					int indice=0;
+					for(Inimigo inimigo:fase3.getInimigo()) {
+						if(inimigo.getRetangulos()[4].intersects(fase3.getPersonagem().getRectangle())) {
+							if(indice==0||(this.fase3.getLivros().get(0).isPegouLivro())) {
+								while(fase3.getPersonagem().getRectangle().intersects(inimigo.getRectangle())) {
+									int contador =0;
+									for (Inimigo i:this.fase3.getInimigo()) {
+										if(fase3.getLivros().get(0).isPegouLivro()&contador==0) {
+											andar(inimigo, this.fase3.getPersonagem(), fase3.getLivros().get(0));
+											livroSumiu=true;
+										}else {
+											andar(inimigo, this.fase3.getPersonagem(), null);
+										}
+										contador++;
+									}
+									if(inimigo.getY()>fase2.getPersonagem().getY()) {
+										fase2.getPersonagem().setAparencia(0);
+									}else {
+										fase2.getPersonagem().setAparencia(3);
+									}
+									this.fase3.repaint();
+									Thread.sleep(200);
+								}
+								inimigo.setAparecer(false);
+								fase3.repaint();
+								Thread.sleep(200);
+								break;
+							}else {
+								Thread.sleep(200);
+							}
+
+							//									
+						}
+						indice++;
+					}
+				}
+			}
+			index++;
+		}
+	}
+	//FALTA COLOCAR UNS LIMITES PARA O INIMIGO NA FASE
+	//FALTA ATIVAR UNS RETANGULOS PARA PARAR O PERSONAGEM
+	//FALTA AJEITAR UM RETANGULO DE COLISAO
+	//FALTA POR O PERSONAGEM NOS DESAFIOS
+	//FALTA AJUSTAR OS CAMINHOS DA FASE1 E FASE3 JUNTAMENTE COM OS DESAFIOS
+	//FALTA COLOCAR AS MENSAGENS
+	//FALTA BOTAR UMA TELA DE PARABENS POR SALVAR A BRUXINHA
+	//FALTA GRAVAR O VIDEO E COLOCAR O LINK NO JOGO
+	
+	public void perseguir(Inimigo inimigo,int x, int y){
+		
+		if(inimigo.getX() > x){
+			inimigo.setDirecao("esquerda");
+		}else if(inimigo.getX() < x){
+			inimigo.setDirecao("direita");
+		}else if(inimigo.getY() > y){
+			inimigo.setDirecao("acima");
+		}else if(inimigo.getY() < y){
+			inimigo.setDirecao("abaixo");
+
+		}
+		
+	}
+	
+	public void coordenadas(Personagem personagem,String direcao, Inimigo inimigo, Livro livro){
+		if((livro==null||livro.isPegouLivro())&personagem.checarColisao(inimigo.getRetangulos()[4])){
+			inimigo.setPerseguir(true);
+			perseguir(inimigo,personagem.getX(),personagem.getY());
+		}else{
+			if(inimigo.isPerseguir()) {
+				if(fase1.isVisible() ) {
+					if(inimigo.getRectangle().intersects(new Rectangle(490,220,20,100))) {
+						inimigo.direcao="acima";
+						inimigo.setPerseguir(false);
+					}else if(inimigo.getRetangulos()[2].getWidth()<=0){
+						inimigo.setPerseguir(false);
+						inimigo.direcao="direita";
+					}
+				}else if(fase2.isVisible()) {
+					if(inimigo.getRectangle().intersects(new Rectangle(560,200,20,20))) {
+						inimigo.direcao="abaixo";
+						inimigo.setPerseguir(false);
+					}else if(inimigo.getRetangulos()[2].getWidth()<=0){
+						inimigo.setPerseguir(false);
+						inimigo.direcao="esquerda";
+						
+					}else if(inimigo.checarColisao(inimigo.getRetangulos()[1])&(!inimigo.isColidiuRet2())){//1 esquerda
+						inimigo.setColidiuRet2(true);
+						inimigo.setColidiuRet4(false);
+						inimigo.direcao="esquerda";
+					}else if(inimigo.checarColisao(inimigo.getRetangulos()[0])&(!inimigo.isColidiuRet1())){	//0 direita
+						inimigo.setColidiuRet1(true);
+						inimigo.setColidiuRet3(false);
+						inimigo.direcao="direita";
+					}else if(inimigo.checarColisao(inimigo.getRetangulos()[2])&(!inimigo.isColidiuRet3())) {//2 baixo
+						inimigo.setColidiuRet3(true);
+						inimigo.setColidiuRet1(false);
+						inimigo.direcao="abaixo";
+					}else if(inimigo.checarColisao(inimigo.getRetangulos()[3])&(!inimigo.isColidiuRet4())) {///3 acima
+						inimigo.setColidiuRet2(false);
+						inimigo.setColidiuRet4(true);
+						inimigo.direcao="acima";
+					}
+					inimigo.setPerseguir(false);
+				}else if(fase3.isVisible()) {
+					inimigo.setPerseguir(false);
+					if(inimigo.checarColisao(inimigo.getRetangulos()[1])&(!inimigo.isColidiuRet2())){//1 esquerda
+						inimigo.setColidiuRet2(true);
+						inimigo.setColidiuRet4(false);
+						inimigo.direcao="esquerda";
+						inimigo.setPerseguir(false);
+					}else if(inimigo.checarColisao(inimigo.getRetangulos()[0])&(!inimigo.isColidiuRet1())){	//0 direita
+						inimigo.setColidiuRet1(true);
+						inimigo.setColidiuRet3(false);
+						inimigo.direcao="direita";
+						inimigo.setPerseguir(false);
+					}else if(inimigo.checarColisao(inimigo.getRetangulos()[2])&(!inimigo.isColidiuRet3())) {//2 baixo
+						inimigo.setColidiuRet3(true);
+						inimigo.setColidiuRet1(false);
+						inimigo.direcao="abaixo";
+						inimigo.setPerseguir(false);
+					}else if(inimigo.checarColisao(inimigo.getRetangulos()[3])&(!inimigo.isColidiuRet4())) {///3 acima
+						inimigo.setColidiuRet2(false);
+						inimigo.setColidiuRet4(true);
+						inimigo.direcao="acima";
+						inimigo.setPerseguir(false);
+					}
+					
+				}
+			}else if(inimigo.getRetangulos()[2].getWidth()<=0) {
+				if(inimigo.contador==0){
+					inimigo.direcao = direcao;
+					inimigo.contador++;
+				}else if(inimigo.checarColisao(inimigo.getRetangulos()[1])){
+					inimigo.setColidiuRet2(true);
+					//inimigo.setColidiuRet4(false);
+					direitaInimigo=3;
+					inimigo.direcao="esquerda";
+				}else if(inimigo.checarColisao(inimigo.getRetangulos()[0])){	
+					inimigo.setColidiuRet1(true);
+					//inimigo.setColidiuRet3(false);
+					esquerdaInimigo=9;
+					inimigo.direcao="direita";
+				}else if(inimigo.checarColisao(inimigo.getRetangulos()[2])) {
+					inimigo.setColidiuRet3(true);
+					//inimigo.setColidiuRet1(false);
+					abaixoInimigo=6;
+					inimigo.direcao="abaixo";
+				}else if(inimigo.checarColisao(inimigo.getRetangulos()[3])) {
+					//inimigo.setColidiuRet2(false);
+					acimaInimigo=0;
+					inimigo.setColidiuRet4(true);
+					inimigo.direcao="acima";
+				}
+			}else {
+				if(inimigo.contador==0){
+					inimigo.direcao = direcao;
+					inimigo.contador++;
+				}else if(inimigo.checarColisao(inimigo.getRetangulos()[1])&(!inimigo.isColidiuRet2())){//1 esquerda
+					inimigo.setColidiuRet2(true);
+					inimigo.setColidiuRet4(false);
+					inimigo.direcao="esquerda";
+				}else if(inimigo.checarColisao(inimigo.getRetangulos()[0])&(!inimigo.isColidiuRet1())){	//0 direita
+					inimigo.setColidiuRet1(true);
+					inimigo.setColidiuRet3(false);
+					inimigo.direcao="direita";
+				}else if(inimigo.checarColisao(inimigo.getRetangulos()[2])&(!inimigo.isColidiuRet3())) {//2 baixo
+					inimigo.setColidiuRet3(true);
+					inimigo.setColidiuRet1(false);
+					inimigo.direcao="abaixo";
+				}else if(inimigo.checarColisao(inimigo.getRetangulos()[3])&(!inimigo.isColidiuRet4())) {///3 acima
+					inimigo.setColidiuRet2(false);
+					inimigo.setColidiuRet4(true);
+					inimigo.direcao="acima";
+				}
+			}
+			
+		}
+	}
+	
+	
+	
+	//falta a troca de aparencias
+	public void andar(Inimigo inimigo,Personagem personagem,Livro livro){
+		coordenadas(personagem, inimigo.direcao,inimigo,livro);
+		if(inimigo.direcao!=null) {
+			if(personagem.checarColisao(inimigo.getRectangle())) {
+				this.inventario.getLifeBar().setValue(this.inventario.getLifeBar().getValue()-10);
+				if(this.inventario.getLifeBar().getValue()==0&(!resetou)){
+					executando=false;
+					this.exibirGameOver.show(true);
+					resetou=false;
+				}
+			}
+			
+			if(inimigo.direcao.equals("esquerda")){
+				//this.aparencia = 1;
+				switch (esquerdaInimigo) {
+					case 9:
+						inimigo.setAparencia(esquerdaInimigo);
+						repeteEsquerdaInimigo=false;
+						break;
+					case 10:
+						inimigo.setAparencia(esquerdaInimigo);
+						break;
+					case 11:
+						inimigo.setAparencia(esquerdaInimigo);
+						esquerdaInimigo=11;
+						repeteEsquerdaInimigo=true;
+						break;
+	
+					default:
+						break;
+				}
+				if(repeteEsquerdaInimigo) {
+					esquerdaInimigo--;
+				}else {
+					esquerdaInimigo++;
+				}
+				
+				if(fase2.isVisible()) {
+					if(inimigo.getRetangulos()[4].contains(inimigo.getRectangle())) {
+						if(!inimigo.getRectangle().intersects(new Rectangle(440,200,25,60))) {
+							inimigo.setX(inimigo.getX()-10);
+						}
+					}else {
+						
+						inimigo.setX(inimigo.getX()-10);
+					}
+					
+					
+				}else if(fase1.isVisible()){
+					if(inimigo.getRectangle().intersects(new Rectangle(420,160,40,160))&inimigo.isPerseguir()) {
+						inimigo.direcao="direita";
+					}
+					inimigo.setX(inimigo.getX()-10);
+					
+				}else if(fase3.isVisible()) {
+					if(inimigo.getRetangulos()[4].contains(inimigo.getRectangle())){
+						if(inimigo.getRectangle().intersects(this.fase3.getLivros().get(0).getRectangle())) {
+							inimigo.setDirecao("abaixo");
+						}else if(inimigo.getRectangle().intersects(new Rectangle(160,200,120,80))) {
+							inimigo.setDirecao("direita");
+						}
+						else {
+							inimigo.setX(inimigo.getX()-10);
+						}
+						
+					}
+					else {
+						if(inimigo.direcao.equals("direita")) {
+							inimigo.setDirecao("esquerda");
+							inimigo.setX(inimigo.getX()-20);
+							
+						}else if(inimigo.direcao.equals("esquerda")) {
+							inimigo.setDirecao("direita");
+							inimigo.setX(inimigo.getX()+20);
+						}
+						inimigo.setColidiuRet3(false);
+						inimigo.setColidiuRet1(false);
+						inimigo.setColidiuRet2(false);
+						inimigo.setColidiuRet4(false);
+					}
+					
+					
+				}
+			}else if(inimigo.direcao.equals("direita")){
+				switch (direitaInimigo) {
+					case 3:
+						inimigo.setAparencia(direitaInimigo);
+						repeteDireitaInimigo=false;
+						break;
+					case 4:
+						inimigo.setAparencia(direitaInimigo);
+						break;
+					case 5:
+						inimigo.setAparencia(direitaInimigo);
+						direitaInimigo=5;
+						repeteDireitaInimigo=true;
+						break;
+				}
+				if(repeteDireitaInimigo) {
+					direitaInimigo--;
+				}else {
+					direitaInimigo++;
+				}
+				
+				if(fase1.isVisible()) {
+					if(inimigo.getRectangle().intersects(new Rectangle(510,160,20,160))&inimigo.isPerseguir()) {
+						inimigo.direcao="abaixo";
+						//System.out.println("OIIIIII");
+					}else {
+						inimigo.setX(inimigo.getX()+10);
+					}
+				}else if(fase3.isVisible()) {
+					if(inimigo.getRetangulos()[4].contains(inimigo.getRectangle())) {
+						if(inimigo.getRectangle().intersects(this.fase3.getRectangleLivros().get(0))) {
+							inimigo.setColidiuRet3(false);
+							inimigo.setColidiuRet1(false);
+							inimigo.setColidiuRet2(false);
+							inimigo.setColidiuRet4(false);
+							inimigo.direcao="abaixo";
+						}else if(inimigo.getRectangle().intersects(inimigo.getRetangulos()[2])) {
+							inimigo.setColidiuRet3(false);
+							inimigo.setColidiuRet1(false);
+							inimigo.setColidiuRet2(false);
+							inimigo.setColidiuRet4(false);
+							inimigo.direcao="acima";
+						}
+						inimigo.setX(inimigo.getX()+10);
+					}
+				}else if(fase2.isVisible()) {
+					if(inimigo.getRetangulos()[4].contains(inimigo.getRectangle())) {
+						
+						if(!inimigo.getRectangle().intersects(new Rectangle(440,200,25,60))) {
+							inimigo.setX(inimigo.getX()+10);
+						}else  if(inimigo.getRectangle().intersects(new Rectangle(560,200,20,40))) {
+							inimigo.setColidiuRet3(false);
+							inimigo.setColidiuRet1(false);
+							inimigo.setColidiuRet2(false);
+							inimigo.setColidiuRet4(false);
+							inimigo.direcao="abaixo";
+						}else {
+							inimigo.setX(inimigo.getX()+10);
+						}
+					}else {
+						inimigo.setX(inimigo.getX()+10);
+					}
+				}
+				
+				
+				
+			}else if(inimigo.direcao.equals("abaixo")){
+				switch (abaixoInimigo) {
+					case 6:
+						inimigo.setAparencia(abaixoInimigo);
+						if(repeteAbaixoInimigo) {
+							abaixoInimigo=6;
+						}else {
+							abaixoInimigo=7;
+						}
+						break;
+					case 7:
+						inimigo.setAparencia(abaixoInimigo);
+						repeteAbaixoInimigo=true;
+						abaixoInimigo=5;
+						break;
+					case 8:
+						inimigo.setAparencia(abaixoInimigo);
+						repeteAbaixoInimigo=false;
+						abaixoInimigo=5;
+						break;
+	
+					default:
+						break;
+				}
+				abaixoInimigo++;
+				if(fase2.isVisible()) {
+					if(inimigo.getRetangulos()[4].contains(inimigo.getRectangle())) {
+						if((inimigo.getRectangle().intersects(new Rectangle(0,170,380,25)))) {
+							inimigo.direcao="esquerda";
+							inimigo.setColidiuRet3(false);
+							inimigo.setColidiuRet1(false);
+							inimigo.setColidiuRet2(false);
+							inimigo.setColidiuRet4(false);
+						}else if(!inimigo.getRectangle().intersects(new Rectangle(455,220,60,20))&inimigo.getRectangle().getWidth()!=0) {
+							inimigo.setY(inimigo.getY()+10);
+							
+						}else {
+							inimigo.direcao="direita";
+						}
+					}else {
+						inimigo.setColidiuRet3(false);
+						inimigo.setColidiuRet1(false);
+						inimigo.setColidiuRet2(false);
+						inimigo.setColidiuRet4(false);
+						inimigo.direcao="esquerda";
+					}
+					
+					
+					
+				}
+				else if(fase1.isVisible()){
+					if(inimigo.getRectangle().intersects(new Rectangle(480,340,60,25))) {
+						inimigo.direcao="acima";
+					}
+					inimigo.setY(inimigo.getY()+10);
+				}else if(fase3.isVisible()) {
+					if(inimigo.getRetangulos()[4].contains(inimigo.getRectangle())) {
+						inimigo.setColidiuRet3(true);
+						inimigo.setColidiuRet1(false);
+						inimigo.setY(inimigo.getY()+10);
+					}
+					
+				}
+				
+			}else if(inimigo.direcao.equals("acima")){
+				switch (acimaInimigo) {
+					case 0:
+						inimigo.setAparencia(acimaInimigo);
+						if(repeteAcimaInimigo) {
+							acimaInimigo=1;
+						}else {
+							acimaInimigo=0;
+						}
+						break;
+					case 1:
+						inimigo.setAparencia(acimaInimigo);
+						repeteAcimaInimigo=true;
+						acimaInimigo=-1;
+						break;
+					case 2:
+						inimigo.setAparencia(acimaInimigo);
+						repeteAcimaInimigo=false;
+						acimaInimigo=-1;
+						break;
+	
+					default:
+						break;
+				}
+				acimaInimigo++;
+				if(inimigo.isPerseguir()) {
+					if(fase3.isVisible()) {
+						if(!inimigo.getRectangle().intersects(new Rectangle(160,200,120,80))) {
+							inimigo.setY(inimigo.getY()-10);
+						}else {
+							inimigo.direcao="direita";
+						}
+						
+						
+					}
+				}else if(fase2.isVisible()) {
+					if(inimigo.getRetangulos()[4].contains(inimigo.getRectangle())) {
+						if(inimigo.getRectangle().intersects(inimigo.getRetangulos()[2])) {
+							inimigo.setColidiuRet3(false);
+							inimigo.setColidiuRet1(false);
+							inimigo.setColidiuRet2(false);
+							inimigo.setColidiuRet4(false);
+							inimigo.direcao="abaixo";
+						}else {
+							inimigo.setY(inimigo.getY()-10);
+						}
+					}else {
+						inimigo.setY(inimigo.getY()-10);
+					}
+				}
+				else {
+					inimigo.setY(inimigo.getY()-10);
+				}
+				
+			
+				
+			}
+		}
+		
+	}
+	
+	
+	
 	
 	public void inicializarCoordenadasDoPercurso() {
 		this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalCima().removeAll(this.telaJogo.getContainerFase().getDesafiosFase1().get(0).getRetangulosPercursoVerticalCima());
@@ -855,7 +2436,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(220, 160, 20, 20));
 			
 			//VERTICAL ABAIXO
-			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(240,240,20,20));
+			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(240,260,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(100,340,20,20));
 			
 			//HORIZONTAL DIREITA
@@ -865,19 +2446,26 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(320, 220, 20, 20));
 			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(220, 160, 20, 20));
 			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(80, 220, 20, 40));
+			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(280, 320, 20, 40));//INDICE 3
+			
 	
 		}else if(Dados.desafio2Fase1visivel) {
 			//VERTICAL ACIMA
-			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(200, 140, 20, 20));
-			
+			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(200, 135, 20, 18));
+			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(380, 135, 20, 18));
 			//VERTICAL ABAIXO
 			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(360,290,20,20));
-			
+			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(205,350,20,20));
 			//HORIZONTAL DIREITA
 			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(380, 160, 10,40));
+			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(380, 290, 10,40));
+			//this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(220, 280, 20,20));
+			
 			
 			//HORIZONTAL ESQUERDA
 			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(255, 280, 20, 20));
+			this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(215, 260, 20, 20));
+			
 		}else if(Dados.desafio1Fase2Visivel) {
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(280,320,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(100,140,20,20));
@@ -889,6 +2477,9 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(500,160,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(320,380,20,20));
+			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(300,320,20,20));// INDICE 2
+			
+			
 			
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(80,340,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(340,340,20,20));//FINALIZA
@@ -921,6 +2512,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(480,160,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(520,260,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(520,360,20,20));
+			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(286, 366,20,20));//INDICE 6
 			
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(320,360,20,20));//finaliza
 			this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(60,360,20,20));
@@ -937,25 +2529,26 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(80,220,40,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(220,140,40,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(340,140,40,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(400,100,40,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(400,110,40,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalCima().add(new Rectangle(480,100,40,20));
 			
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(280,420,40,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(80,360,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(220,260,20,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(340,260,20,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(340,240,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(480,360,40,20));
 			
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(320,380,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(240,240,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(360,160,20,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(440,240,20,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(520,120,20,40));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(430,235,20,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(510,120,20,40));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(520,340,20,40));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(300,320,20,40));//INDICE 6
 			
 			
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(260,380,20,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(300,340,20,40));//finaliza
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(360,340,20,20));//finaliza
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(60,340,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(60,240,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(200,160,20,20));
@@ -975,16 +2568,16 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			
 			
 			
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(100,160,20,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(240,165,40,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(100,160,20,20));//INDICE 0
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(240,170,40,10));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(360,230,40,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(420,340,40,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(480,420,40,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(280,420,40,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(420,330,40,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(480,400,40,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoVerticalBaixo().add(new Rectangle(280,400,40,20));
 			
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(260,130,20,10));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(380,160,20,40));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(440,220,20,40));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(260,120,20,10));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(380,160,20,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(440,220,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(500,320,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(300,340,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalDireita().add(new Rectangle(200,240,20,20));
@@ -993,10 +2586,11 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(220,180,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(340,220,20,40));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(400,320,20,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(500,400,20,20));
-			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(260,400,20,20));
+			//this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(500,400,20,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(260,390,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(160,340,20,20));
 			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(80,220,20,20));
+			this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda().add(new Rectangle(280,320,20,20));//INDICE 6
 		}
 		
 	}
@@ -1009,13 +2603,14 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				this.indice=indice;
 				numeroDesafio=indice;
 				livros.get(indice).setColidiu(true);
+			//	System.out.println("sasasasasassssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss");
 				return true;
 			}else if(livros.get(indice).isColidiu()&(personagem.getY()>(livros.get(indice).getImagem().getHeight()+livros.get(indice).getY()))) {
 				livros.get(indice).setColidiu(false);
 			}else if(livros.get(indice).isColidiu()&(personagem.getX()>(livros.get(indice).getImagem().getWidth()+livros.get(indice).getX()))) {
-				System.out.println("oiiiiaaa");
+				//System.out.println("oiiiiaaa");
 				livros.get(indice).setColidiu(false);
-			}else if(livros.get(indice).isColidiu()&(personagem.getX()+personagem.getWidth())<livros.get(indice).getX()) {
+			}else if(livros.get(indice).isColidiu()&(personagem.getX()+personagem.getWidth()<livros.get(indice).getX())) {
 				livros.get(indice).setColidiu(false);
 			}
 			numeroDesafio=-1;
@@ -1047,11 +2642,12 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 		}else if(fase2.isVisible()) {
 			if(fase2.getPersonagem().getRectangle().intersects(fase2.getCristal().getRectangle())){
 				fase2.getCristal().setPegouCristal(true);
+				System.out.println("oioisoaisoi");
 				return true;
 			}
 		}else if(fase3.isVisible()) {
 			for(Cristal c: fase3.getCristais()) {
-				if(this.fase1.getPersonagem().getRectangle().intersects(c.getRectangle())) {
+				if(this.fase3.getPersonagem().getRectangle().intersects(c.getRectangle())) {
 					c.setPegouCristal(true);
 					return true;
 				}
@@ -1198,7 +2794,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				this.fase1.getLivros().get(numeroDesafio).setPegouLivro(true);
 				//this.fase1.getRectangleLivros().get(numeroDesafio).setBounds(-1, -1, 0, 0);
 				this.fase1.getPersonagem().setMagiaTeleporte(true);
-				this.inventario.getMagiaTeleporte().setVisible(true);
+				
 				this.fase1.setVisible(true);
 				//numeroDesafio=-1;
 
@@ -1211,7 +2807,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				this.inventarioHorizontal.setPosInicialFuncao(15);
 
 
-				this.inventario.preencherComandos(true);
+				this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
 				
 				ativarEventosDosComandosDoInventario();
 				
@@ -1234,7 +2830,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 
 					exibirMensagenLonga.setVisible(true);
 					this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).setVisible(false);
-					this.inventario.getMagiaAtaque().setVisible(true);
+					this.fase2.getPersonagem().setMagiaAtaque(true);
 					Dados.desafio2Fase2Visivel=false;
 				}
 
@@ -1255,26 +2851,57 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				Dados.fase2Visivel=true;
 				colorirObjetivoSecundario(Dados.QTD_LIVROS_FASE2);
 				this.fase2.getLivros().get(numeroDesafio).setPegouLivro(true);
+				Dados.desafioAtivado=false;
 				this.inventario.getQuadroComandos().removeAll();
 				this.inventario.getComandos().removeAll(this.inventario.getComandos());
 				this.inventario.getQtdComandos().removeAll(this.inventario.getQtdComandos());
 				this.inventarioHorizontal.getQuadroPrincipal().removeAll();
 				this.inventarioHorizontal.setPosInicialMain(15);
 				this.inventarioHorizontal.setPosInicialFuncao(15);
-				inventario.preencherComandos(true);
+				inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
 				ativarEventosDosComandosDoInventario();
 				this.fase2.setVisible(true);
 
 			}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
 				this.fase3.getLivros().get(numeroDesafio).setPegouLivro(true);
 				Dados.fase3Visivel=true;
+				exibirMensagenLonga.getMensagem().setText("PARABENS!!");
+				exibirMensagenLonga.getMensagem().setBounds(160,30, 400, 20);
+				exibirMensagenLonga.getSubMensagem().setText("");
+
+				exibirMensagenLonga.setVisible(true);
 				if(numeroDesafio==0) {
 					Dados.desafio1Fase3Visivel=false;
 				}else {
 					Dados.desafio2Fase3Visivel=false;
 				}
+				
+				executando=false;
+				baixoAndando=false;
+				acimaAndando=false;
+				direitaAndando=false;
+				esquerdaAndando=false;
+
+				frente=0;
+				direita=3;
+				esquerda=6;
+				costa=9;
+
+				this.fase3.setQtdObjSecundarios(this.fase2.getQtdObjSecundarios()+1);
+				//this.inventario.getRotuloPrincipal().setText(this.fase2.getQtdObjSecundarios()+"/"+Dados.QTD_CRISTAIS_TOTAL);
+				//this.fase2.getLivros().get(numeroDesafio).setPegouLivro(true);
+				Dados.fase3Visivel=true;
 				colorirObjetivoSecundario(Dados.QTD_LIVROS_FASE3);
-				inventario.preencherComandos(true);
+				this.fase3.getLivros().get(numeroDesafio).setPegouLivro(true);
+				Dados.desafioAtivado=false;
+				this.inventario.getQuadroComandos().removeAll();
+				this.inventario.getComandos().removeAll(this.inventario.getComandos());
+				this.inventario.getQtdComandos().removeAll(this.inventario.getQtdComandos());
+				this.inventarioHorizontal.getQuadroPrincipal().removeAll();
+				this.inventarioHorizontal.setPosInicialMain(15);
+				this.inventarioHorizontal.setPosInicialFuncao(15);
+				this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).setVisible(false);
+				inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
 				ativarEventosDosComandosDoInventario();
 				this.fase3.setVisible(true);
 
@@ -1311,27 +2938,32 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				}
 				return true;
 			}else if(direcao.equalsIgnoreCase("cima")) {
+				int indice=0;
 				for(Rectangle r:fase1.getRetangulosPercursoVerticalCima()) {
 					if(this.fase1.getPersonagem().getRectangle().intersects(r)) {
+						if(indice==4) {
+							if(Integer.parseInt(this.inventario.getRotuloPrincipal().getText().substring(0,1))==4){
+								this.exibirParabens.show(true);
+							}
+						}
 						return false;
 					}
+					indice++;
 				}
 				return true;
 			}
 			
 		}else if(fase2.isVisible()) {
-//			if(posicao==1||posicao==0||posicao==8) {
-//				this.posicao=-1;
-//			}
+
 			if(direcao.equalsIgnoreCase("baixo")) {
+				//System.out.println("auuuuuu");
 				int indice=0;
-				for(Rectangle r:fase2.getRetangulosPercursoVerticalBaixo()) {
+				for(Rectangle r:this.fase2.getRetangulosPercursoVerticalBaixo()) {
 					if(this.fase2.getPersonagem().getRectangle().intersects(r)) {
+						System.out.println(indice);
 						indiceColisaoAcimaOuAbaixo=indice;
-//						if(indice==8) {
-//							this.posicao=8;
-//						}
-						if(indice<5) {
+
+						if(indice<4) {
 							if(retangulosAbaixoColidiuFase2.get(indice)) {
 								for(int i=0;i<5;i++) {
 									retangulosAbaixoColidiuFase2.set(indice,false);
@@ -1354,6 +2986,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				int indice =0;
 				for(Rectangle r:fase2.getRetangulosPercursoVerticalCima()) {
 					if(this.fase2.getPersonagem().getRectangle().intersects(r)) {
+						System.out.println(indice);
 						indiceColisaoAcimaOuAbaixo=indice;
 						if(indice<5) {
 							if(retangulosAcimaColidiuFase2.get(indice)) {
@@ -1374,26 +3007,23 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				return true;
 			}
 		}else if(fase3.isVisible()) {
-//			if(posicao==1||posicao==0) {
-//				this.posicao=-1;
-//			}
+
 			if(direcao.equalsIgnoreCase("baixo")) {
-				
+				int indice=0;
 				for(Rectangle r:fase3.getRetangulosPercursoVerticalBaixo()) {
 					if(this.fase3.getPersonagem().getRectangle().intersects(r)) {
-						
+						System.out.println("index"+indice);
+						indiceColisaoAcimaOuAbaixo=indice;
 						return false;
 					}
-					
+					indice++;
 				}
 				return true;
 			}else if(direcao.equalsIgnoreCase("cima")) {
 				int indice=0;
 				for(Rectangle r:fase3.getRetangulosPercursoVerticalCima()) {
 					if(this.fase3.getPersonagem().getRectangle().intersects(r)) {
-//						if(indice==0) {
-//							this.posicao=0;
-//						}
+						
 						return false;
 					}
 					indice++;
@@ -1403,25 +3033,25 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			
 		}
 		else if(Dados.desafioAtivado) {
-			Magia m=null;
+			Personagem p=null;
 			ArrayList<DesafioPanel> desafios=null;
 			if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
-				m=this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia();
+				p=this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem();
 				desafios=this.telaJogo.getContainerFase().getDesafiosFase1();
 			}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
-				m=this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia();
+				p=this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem();
 				desafios=this.telaJogo.getContainerFase().getDesafiosFase2();
 			}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
-				m=this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia();
+				p=this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem();
 				desafios=this.telaJogo.getContainerFase().getDesafiosFase3();
 			}
-			Rectangle magia = new Rectangle(m.getX(), m.getY(), m.getLargura(), m.getAltura());
+			Rectangle personagem = new Rectangle(p.getX(), p.getY(), p.getLargura(), p.getAltura());
 			if(direcao.equalsIgnoreCase("cima")) {
 				int indice=0;
 				for(Rectangle r:desafios.get(numeroDesafio).getRetangulosPercursoVerticalCima()) {
-					if(magia.intersects(r)) {
+					if(personagem.intersects(r)) {
 						if(numeroDesafio==0&Dados.desafio2Fase3Visivel) {
-							System.out.println("num creioo");
+						//	System.out.println("num creioo");
 							pontoChegadaDesafio1=indice;
 						}
 						return false;
@@ -1430,12 +3060,16 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				}
 				return true;
 			}else if(direcao.equalsIgnoreCase("baixo")) {
-				
+				int indice=0;
 				for(Rectangle r:desafios.get(numeroDesafio).getRetangulosPercursoVerticalBaixo()) {
-					if(magia.intersects(r)) {
-						System.out.println(r.getY());
+					if(personagem.intersects(r)) {
+						//System.out.println(r.getY());
+						if(indice==0&Dados.desafio2Fase3Visivel) {
+							this.exibirInvalida.show(true);
+						}
 						return false;
 					}
+					indice++;
 				}
 				return true;
 			}
@@ -1445,9 +3079,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 	
 	public boolean percursoHorizontal(String direcao) {
 		if(fase1.isVisible()) {
-//			if(posicao==1||posicao==0) {
-//				this.posicao=-1;
-//			}
+			
 			if(direcao.equalsIgnoreCase("direita")) {
 				
 				int indice=0;
@@ -1457,7 +3089,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 						
 						if(indice<2) {
 							if(retangulosDireitaColidiuFase1.get(indice)) {
-							//	this.posicao=1;
+							
 								retangulosDireitaColidiuFase1.set(0,false);
 								retangulosDireitaColidiuFase1.set(1,false);
 								retangulosEsquerdaColidiuFase1.set(0,false);
@@ -1495,7 +3127,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				return true;
 			}
 		}else if(fase2.isVisible()) {
-			System.out.println(direcao);
+		//	System.out.println(direcao);
 //			if(posicao==1||posicao==0) {
 //				this.posicao=-1;
 //			}
@@ -1507,22 +3139,8 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 					if(this.fase2.getPersonagem().getRectangle().intersects(r)) {
 						indiceColisaoDireitaOuEsquerda=indice;
 						System.out.println("index:"+indice);
-						if(indice<8) {
-//							if(indice==0) {
-//								this.posicao=0;
-//							}
-//							if(indice==4) {
-//								if(opostoDireitaAcima) {
-//									return false;
-//								}
-//								return true;							}
-//							}else if(this.fase2.getPersonagem().getX()>(r.getX()+r.getWidth())) {
-//								
-//								retangulosDireitaColidiuFase2.set(indice,true);
-////								if(opostoDireita) {
-////									opostoDireita=false;
-////									return false;
-////								}
+						if(indice<=8) {
+
 							if(retangulosDireitaColidiuFase2.get(indice)) {
 								
 								retangulosDireitaColidiuFase2.set(0,false);
@@ -1557,27 +3175,13 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				return true;	
 			}else if(direcao.equalsIgnoreCase("esquerda")){
 					int indice=0;
-					System.out.println("affffffffff");
+				
 					for(Rectangle r:fase2.getRetangulosPercursoHorizontalEsquerda()) {
 						if(this.fase2.getPersonagem().getRectangle().intersects(r)) {
 							indiceColisaoDireitaOuEsquerda=indice;
-							System.out.println("aaaaaaaaaaaaaaaaa");
+						//	System.out.println("aaaaaaaaaaaaaaaaa");
 							if(indice<7) {
-//								if(indice==1) {
-//									this.posicao=1;
-//								}
-//								System.out.println("P:"+(this.fase2.getPersonagem().getX()+this.fase2.getPersonagem().getLargura())+" R:"+r.getX());
-//								if(indice==2) {
-//									if(opostoEsquerdaAcima) {
-//										opostoEsquerdaAcima=false;
-//										return false;
-//									}
-//									 
-//									return true;
-//								}else if((this.fase2.getPersonagem().getX()+this.fase2.getPersonagem().getLargura())<r.getX()) {
-//									retangulosEsquerdaColidiuFase2.set(indice,true);
-//									
-//								}else 
+
 								if(retangulosEsquerdaColidiuFase2.get(indice)) {
 									retangulosDireitaColidiuFase2.set(0,false);
 									retangulosDireitaColidiuFase2.set(1,false);
@@ -1607,11 +3211,12 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 						}
 						indice++;
 					}
+				//	System.out.println("iiiiiiiiiiiiiiiiiiiii");
 					return true;
 				
 			}
-				return true;
-			}
+		}
+				
 		else if(fase3.isVisible()) {
 			if(direcao.equalsIgnoreCase("direita")) {
 				int indice=0;
@@ -1624,9 +3229,11 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								retangulosEsquerdaColidiuFase3.set(0,false);
 								return false;
 							}
-							return true;
+							//return true;
+						}else {
+							return false;
 						}
-						return false;
+						
 					}
 					indice++;
 				}
@@ -1635,15 +3242,18 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				int indice=0;
 				for(Rectangle r:fase3.getRetangulosPercursoHorizontalEsquerda()) {
 					if(this.fase3.getPersonagem().getRectangle().intersects(r)) {
+						System.out.println(indice+"ADAD");
 						if(indice<1) {
 							if(retangulosEsquerdaColidiuFase3.get(indice)) {
 								retangulosDireitaColidiuFase3.set(0,false);
 								retangulosEsquerdaColidiuFase3.set(0,false);
 								return false;
 							}
-							return true;
+							//return true;
+						}else {
+							return false;
 						}
-						return false;
+						
 					}
 					indice++;
 				}
@@ -1651,27 +3261,37 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			}
 		}
 		else if(Dados.desafioAtivado) {
-			Magia m=null;
+		
+			Personagem p = null;
 			ArrayList<DesafioPanel> desafios=null;
 			if(Dados.desafio1fase1Visivel||Dados.desafio2Fase1visivel) {
-				m=this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getMagia();
+				
+				p = this.telaJogo.getContainerFase().getDesafiosFase1().get(numeroDesafio).getPersonagem();
 				desafios=this.telaJogo.getContainerFase().getDesafiosFase1();
 			}else if(Dados.desafio1Fase2Visivel||Dados.desafio2Fase2Visivel) {
-				m=this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getMagia();
+				
+				p = this.telaJogo.getContainerFase().getDesafiosFase2().get(numeroDesafio).getPersonagem();
 				desafios=this.telaJogo.getContainerFase().getDesafiosFase2();
 			}else if(Dados.desafio1Fase3Visivel||Dados.desafio2Fase3Visivel) {
-				System.out.println("auuuuuuuuuuuuuuuu");
-				m=this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getMagia();
+				
+				p = this.telaJogo.getContainerFase().getDesafiosFase3().get(numeroDesafio).getPersonagem();
 				desafios=this.telaJogo.getContainerFase().getDesafiosFase3();
 			}
-			Rectangle magia = new Rectangle(m.getX(), m.getY(), m.getLargura(), m.getAltura());
+			Rectangle personagem = new Rectangle(p.getX(), p.getY(), p.getLargura(), p.getAltura());
 			if(direcao.equalsIgnoreCase("direita")) {
 				int indice=0;
 				for(Rectangle r:desafios.get(numeroDesafio).getRetangulosPercursoHorizontalDireita()) {
-					if(magia.intersects(r)) {
+					if(personagem.intersects(r)) {
+						if((Dados.desafio2Fase2Visivel||Dados.desafio1Fase3Visivel)&indice==6) {
+							this.exibirInvalida.show(true);
+						}
+						if(Dados.desafio1Fase2Visivel&indice==2) {
+							this.exibirInvalida.show(true);
+						}
+						
 						System.out.println(r.getX()+" "+r.getY());
-						if(numeroDesafio==1&(!Dados.desafio2Fase1visivel)&(!Dados.desafio2Fase3Visivel)) {
-							pontoChegadaDesafio2=indice;
+						if(numeroDesafio==1&(!Dados.desafio2Fase1visivel)&(!Dados.desafio2Fase3Visivel)&(!Dados.desafio1Fase3Visivel)) {
+							pontoChegadaDesafio2=0;
 						}else if(numeroDesafio==0&(Dados.desafio1fase1Visivel)) {
 							pontoChegadaDesafio1=indice;
 						}
@@ -1682,11 +3302,15 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				return true;
 			}else if(direcao.equalsIgnoreCase("esquerda")) {
 				int indice=0;
-				System.out.println("oiiiiiiiiii");
+				System.out.println("desafio: "+numeroDesafio);
 				for(Rectangle r:desafios.get(numeroDesafio).getRetangulosPercursoHorizontalEsquerda()) {
-					if(magia.intersects(r)) {
-						if(numeroDesafio==1) {
-							pontoChegadaDesafio2=indice;
+					if(personagem.intersects(r)) {
+						System.out.println("indiceeee:"+indice);
+						if(indice==3&Dados.desafio1fase1Visivel) {
+							exibirInvalida.show(true);
+						}
+						if(numeroDesafio==1&indice==1) {
+							pontoChegadaDesafio2=0;
 						}else if(numeroDesafio==0&(!Dados.desafio1fase1Visivel)) {
 							pontoChegadaDesafio1=indice;
 						}
@@ -1718,7 +3342,12 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 	
 	public void colorirObjetivoPrincipal(int cristais) {
 		this.inventario.getRotuloPrincipal().setText((Integer.parseInt(this.inventario.getRotuloPrincipal().getText().substring(0,1))+1)+"/"+cristais);
+		this.mapaDasFasesPanel.getRotuloCristais().setText((Integer.parseInt(this.inventario.getRotuloPrincipal().getText().substring(0,1))+1)+"/"+"4");
 		if((Integer.parseInt(this.inventario.getRotuloPrincipal().getText().substring(0,1)))==cristais){
+			this.inventario.getRotuloPrincipal().setForeground(Color.GREEN);
+		}
+		
+		if(Integer.parseInt(this.mapaDasFasesPanel.getRotuloCristais().getText().substring(0,1))==4){
 			this.inventario.getRotuloPrincipal().setForeground(Color.GREEN);
 		}
 	}
@@ -1834,13 +3463,25 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				
 			}
 		}else if(this.sobrePanel.isVisible()) {
-			if(dentro) {
-				this.sobrePanel.getVoltarLabel().setCursor(new Cursor(Cursor.HAND_CURSOR));
+			
+			
+			if(sobrePanel.getLink()==e.getSource()) {
+				if(dentro) {
+					this.sobrePanel.getLink().setCursor(new Cursor(Cursor.HAND_CURSOR));
+				}else {
+					this.sobrePanel.getLink().setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+				this.sobrePanel.getLink().setForeground(c);
 			}else {
-				this.sobrePanel.getVoltarLabel().setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				if(dentro) {
+					this.sobrePanel.getVoltarLabel().setCursor(new Cursor(Cursor.HAND_CURSOR));
+				}else {
+					this.sobrePanel.getVoltarLabel().setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+				}
+				this.sobrePanel.getVoltarLabel().setForeground(c);
 			}
 			
-			this.sobrePanel.getVoltarLabel().setForeground(c);
+			
 		}else if(this.creditosPanel.isVisible()) {
 			if(dentro) {
 				this.creditosPanel.getVoltarLabel().setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -1873,11 +3514,22 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 		}else if(cdLabel.getIcon().toString().substring(8,cdLabel.getIcon().toString().indexOf(".")).equals("loop")) {
 			this.inventario.getQtdComandos().get(4).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(4).getText().substring(1))+1));
 			this.inventario.getQtdComandos().get(4).setForeground(Color.GREEN);
+		}else if(cdLabel.getIcon().toString().substring(8,cdLabel.getIcon().toString().indexOf(".")).equals("funcao")) {
+			this.inventario.getQtdComandos().get(6).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(6).getText().substring(1))+1));
+			this.inventario.getQtdComandos().get(6).setForeground(Color.GREEN);
+		}else if(cdLabel.getIcon().toString().substring(8,cdLabel.getIcon().toString().indexOf(".")).equals("teleporte")) {
+			this.inventario.getQtdComandos().get(7).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(7).getText().substring(1))+1));
+			this.inventario.getQtdComandos().get(7).setForeground(Color.GREEN);
+		}else if(cdLabel.getIcon().toString().substring(8,cdLabel.getIcon().toString().indexOf(".")).equals("congelar")) {
+			this.inventario.getQtdComandos().get(8).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(8).getText().substring(1))+1));
+			this.inventario.getQtdComandos().get(8).setForeground(Color.GREEN);
 		}
 		
 	}
 	
 	public void resetar() {
+		index=0;
+		this.executando=false;
 		this.resetou=true;
 		this.fase1.getPersonagem().setX(150);
 		this.fase1.getPersonagem().setY(120);
@@ -1886,9 +3538,29 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 		this.inventario.getRotuloSecundario().setText("0/"+Dados.QTD_LIVROS_FASE1);
 		this.inventario.getRotuloPrincipal().setText("0/"+Dados.QTD_LIVROS_FASE1);
 		this.inventario.getRotuloSecundario().setForeground(Color.LIGHT_GRAY);
-		//falta atualizar os inimigos
+		
+		
+		this.indiceColisaoDireitaOuEsquerda=0;
+		this.indiceColisaoAcimaOuAbaixo=0;
 		
 		for(int i=0;i<2;i++) {
+			this.fase1.getInimigo().get(i).setAparecer(false);
+			this.fase2.getInimigo().get(i).setAparecer(false);
+			this.fase3.getInimigo().get(i).setAparecer(false);
+			this.fase1.getInimigo().get(i).setColidiuRet3(false);
+			this.fase1.getInimigo().get(i).setColidiuRet1(false);
+			this.fase1.getInimigo().get(i).setColidiuRet2(false);
+			this.fase1.getInimigo().get(i).setColidiuRet4(false);
+			
+			this.fase2.getInimigo().get(i).setColidiuRet3(false);
+			this.fase2.getInimigo().get(i).setColidiuRet1(false);
+			this.fase2.getInimigo().get(i).setColidiuRet2(false);
+			this.fase2.getInimigo().get(i).setColidiuRet4(false);
+			
+			this.fase3.getInimigo().get(i).setColidiuRet3(false);
+			this.fase3.getInimigo().get(i).setColidiuRet1(false);
+			this.fase3.getInimigo().get(i).setColidiuRet2(false);
+			this.fase3.getInimigo().get(i).setColidiuRet4(false);
 			if(i==0) {
 				this.fase1.getCristal().setApareceuCristal(false);
 				this.fase2.getCristal().setApareceuCristal(false);
@@ -1921,16 +3593,22 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 		Dados.desafio2Fase3Visivel=false;
 		
 		
-		this.inventario.preencherComandos(false);
-		
+		this.inventario.preencherComandos(false,this.fase2.getPersonagem().isMagiaAtaque());
+		this.telaJogo.getContainerFase().getJogarLabel().setIcon(new ImageIcon("imagens\\caldeirao.png"));
 		
 		if(this.querJogar) {
 			this.fase1.setVisible(true);
 		}
-		
+		this.mapaDasFasesPanel.getFase2IconPanel().setIcon(new ImageIcon("imagens\\\\fase2Opaca.png"));
+		this.mapaDasFasesPanel.getFase3IconPanel().setIcon(new ImageIcon("imagens\\\\fase3Opaca.png"));
 		
 		this.fase2.setVisible(false);
 		this.fase3.setVisible(false);
+		this.mapaDasFasesPanel.getRotuloBruxinha().setText("Não salva");
+		this.mapaDasFasesPanel.getRotuloBruxinha().setForeground(Color.LIGHT_GRAY);
+		this.mapaDasFasesPanel.getRotuloCristais().setText("0/4");
+		this.mapaDasFasesPanel.getRotuloCristais().setForeground(Color.LIGHT_GRAY);
+		
 		ativarEventosDosComandosDoInventario();
 	}
 	
@@ -1950,13 +3628,21 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				System.exit(0);
 			}
 			
-		}else if(this.sobrePanel.isVisible()) {//TELA SOBRE VISIVEL
+		}else if(this.sobrePanel.isVisible()&this.sobrePanel.getVoltarLabel()==e.getSource()) {//TELA SOBRE VISIVEL
 			this.sobrePanel.setVisible(false);
 			this.menuPanel.setVisible(true);
 		}else if(this.creditosPanel.isVisible()) {//TELA DE CREDITOS VISIVEL
 			this.creditosPanel.setVisible(false);
 			this.menuPanel.setVisible(true);
-		}else if(this.ajudaPanel.getFecharLabel()==e.getSource()) {
+		}else if(this.sobrePanel.getLink()==e.getSource()) {
+			try {
+				Desktop.getDesktop().browse(new URI("https://www.youtube.com/watch?v=NwFeC7sC-gs"));
+			} catch (IOException | URISyntaxException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+		else if(this.ajudaPanel.getFecharLabel()==e.getSource()) {
 			this.ajudaPanel.dispose();
 		}else if(this.mapaDasFasesPanel.isVisible()) {
 			
@@ -1974,9 +3660,13 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 				Dados.fase1Visivel=true;
 				Dados.fase2Visivel=false;
 				Dados.fase3Visivel=false;
-
-				this.inventario.preencherComandos(this.fase1.getPersonagem().isMagiaTeleporte());
+				if(this.fase1.getPersonagem().isMagiaTeleporte()) {
+					this.fase2.getPersonagem().setX(340);
+					this.fase2.getPersonagem().setY(440);
+				}
+				this.inventario.preencherComandos(this.fase1.getPersonagem().isMagiaTeleporte(),this.fase2.getPersonagem().isMagiaAtaque());
 				ativarEventosDosComandosDoInventario();
+				this.inventario.getRotuloPrincipal().setText(0+"/"+Dados.QTD_CRISTAIS_FASE1);
 				this.inventario.getRotuloSecundario().setText(0+"/"+Dados.QTD_LIVROS_FASE1);
 
 				this.fase1.setVisible(true);
@@ -1994,10 +3684,11 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 					Dados.fase2Visivel=true;
 					Dados.fase3Visivel=false;
 					
-					this.inventario.preencherComandos(true);
+					this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
 					this.inventario.getComandos().get(7).setVisible(true);
 					this.inventario.getQtdComandos().get(7).setVisible(true);
 					ativarEventosDosComandosDoInventario();
+					this.inventario.getRotuloPrincipal().setText(0+"/"+Dados.QTD_CRISTAIS_FASE2);
 					this.inventario.getRotuloSecundario().setText(0+"/"+Dados.QTD_LIVROS_FASE2);
 					this.fase2.setVisible(true);
 					this.telaJogo.getContainerFase().setVisible(true);
@@ -2018,11 +3709,11 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 					Dados.fase2Visivel=false;
 					Dados.fase3Visivel=true;
 					
-					this.inventario.preencherComandos(true);
+					this.inventario.preencherComandos(true,this.fase2.getPersonagem().isMagiaAtaque());
 					this.inventario.getComandos().get(7).setVisible(true);
 					this.inventario.getQtdComandos().get(7).setVisible(true);
 					ativarEventosDosComandosDoInventario();
-			
+					this.inventario.getRotuloPrincipal().setText(0+"/"+Dados.QTD_CRISTAIS_FASE3);
 					this.inventario.getRotuloSecundario().setText(0+"/"+Dados.QTD_LIVROS_FASE3);
 					this.fase3.setVisible(true);
 					this.telaJogo.getContainerFase().setVisible(true);
@@ -2120,7 +3811,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								AvisoComandoLimitado();
 							}else {
 								if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1)==0) {
-									this.inventario.getQtdComandos().get(0).setForeground(Color.LIGHT_GRAY);
+									this.inventario.getQtdComandos().get(indice).setForeground(Color.LIGHT_GRAY);
 								}
 								this.inventario.getQtdComandos().get(indice).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1));
 								JLabel temp=new JLabel(new ImageIcon("imagens\\"+jl.getIcon().toString().substring(8)));
@@ -2143,11 +3834,11 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								AvisoComandoLimitado();
 							}else {
 								if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1)==0) {
-									this.inventario.getQtdComandos().get(1).setForeground(Color.LIGHT_GRAY);
+									this.inventario.getQtdComandos().get(indice).setForeground(Color.LIGHT_GRAY);
 								}
 								this.inventario.getQtdComandos().get(indice).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1));
 								JLabel temp=new JLabel(new ImageIcon("imagens\\"+jl.getIcon().toString().substring(8)));
-								if(this.inventarioHorizontal.getQuadroPrincipal().isFocusable()) {
+								if(this.mainSelecionado) {
 									temp.setBounds(this.inventarioHorizontal.getPosInicialMain(),18, 42, 46);
 									this.inventarioHorizontal.getQuadroPrincipal().add(temp);
 									this.inventarioHorizontal.setPosInicialMain(this.inventarioHorizontal.getPosInicialMain()+43);
@@ -2163,7 +3854,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								AvisoComandoLimitado();
 							}else {
 								if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1)==0) {
-									this.inventario.getQtdComandos().get(3).setForeground(Color.LIGHT_GRAY);
+									this.inventario.getQtdComandos().get(indice).setForeground(Color.LIGHT_GRAY);
 								}
 								this.inventario.getQtdComandos().get(indice).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1));
 								JLabel temp=new JLabel(new ImageIcon("imagens\\"+jl.getIcon().toString().substring(8)));
@@ -2184,9 +3875,9 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								AvisoComandoLimitado();
 							}else {
 								if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1)==0) {
-									this.inventario.getQtdComandos().get(2).setForeground(Color.LIGHT_GRAY);
+									this.inventario.getQtdComandos().get(indice).setForeground(Color.LIGHT_GRAY);
 								}
-								this.inventario.getQtdComandos().get(2).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(2).getText().substring(1))-1));
+								this.inventario.getQtdComandos().get(indice).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1));
 								JLabel temp=new JLabel(new ImageIcon("imagens\\"+jl.getIcon().toString().substring(8)));
 								if(this.mainSelecionado) {
 									temp.setBounds(this.inventarioHorizontal.getPosInicialMain(),18, 42, 46);
@@ -2204,7 +3895,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								AvisoComandoLimitado();
 							}else {
 								if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1)==0) {
-									this.inventario.getQtdComandos().get(4).setForeground(Color.LIGHT_GRAY);
+									this.inventario.getQtdComandos().get(indice).setForeground(Color.LIGHT_GRAY);
 								}
 								this.inventario.getQtdComandos().get(indice).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1));
 								JLabel temp=new JLabel(new ImageIcon("imagens\\"+jl.getIcon().toString().substring(8)));
@@ -2223,7 +3914,7 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								AvisoComandoLimitado();
 							}else {
 								if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1)==0) {
-									this.inventario.getQtdComandos().get(5).setForeground(Color.LIGHT_GRAY);
+									this.inventario.getQtdComandos().get(indice).setForeground(Color.LIGHT_GRAY);
 								}
 								this.inventario.getQtdComandos().get(indice).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1));
 								JLabel temp=new JLabel(new ImageIcon("imagens\\"+jl.getIcon().toString().substring(8)));
@@ -2264,7 +3955,27 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 								if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1)==0) {
 									this.inventario.getQtdComandos().get(indice).setForeground(Color.LIGHT_GRAY);
 								}
-								this.inventario.getQtdComandos().get(6).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(6).getText().substring(1))-1));
+								this.inventario.getQtdComandos().get(indice).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1));
+								JLabel temp=new JLabel(new ImageIcon("imagens\\"+jl.getIcon().toString().substring(8)));
+								
+								temp.setBounds(this.inventarioHorizontal.getPosInicialMain(),18, 42, 46);
+								this.inventarioHorizontal.getQuadroPrincipal().add(temp);
+								this.inventarioHorizontal.setPosInicialMain(this.inventarioHorizontal.getPosInicialMain()+43);
+								
+							}else {
+								//AVISO
+								this.exibirMensagenLonga.getMensagem().setText("Erro! Esta instrução não é permitida!");
+								this.exibirMensagenLonga.getSubMensagem().setText("Dentro do campo de Função!");
+								this.exibirMensagenLonga.show(true);
+							}
+						}else if(jl.getIcon().toString().substring(8,jl.getIcon().toString().indexOf(".")).equals("congelar")) {
+							if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))==0)){
+								AvisoComandoLimitado();
+							}else if(mainSelecionado){
+								if((Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1)==0) {
+									this.inventario.getQtdComandos().get(indice).setForeground(Color.LIGHT_GRAY);
+								}
+								this.inventario.getQtdComandos().get(indice).setText(" "+(Integer.parseInt(this.inventario.getQtdComandos().get(indice).getText().substring(1))-1));
 								JLabel temp=new JLabel(new ImageIcon("imagens\\"+jl.getIcon().toString().substring(8)));
 								
 								temp.setBounds(this.inventarioHorizontal.getPosInicialMain(),18, 42, 46);
@@ -2303,8 +4014,28 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 	@Override
 	public void mouseEntered(MouseEvent e) {
 		if(this.menuPanel.isVisible()||this.sobrePanel.isVisible()||this.creditosPanel.isVisible()) {
-			colorir(Color.WHITE, e, true);
-		}else if(this.mapaDasFasesPanel.isVisible()) {
+			if(this.menuPanel.getJogarLabel()==e.getSource()) {
+				colorir(Color.WHITE, e, true);
+			}else if(this.menuPanel.getCreditosLabel()==e.getSource()) {
+				colorir(Color.WHITE, e, true);
+			}
+			else if(this.menuPanel.getSobreJLabel()==e.getSource()) {
+				colorir(Color.WHITE, e, true);
+			}
+			else if(this.menuPanel.getSairLabel()==e.getSource()) {
+				colorir(Color.WHITE, e, true);
+			}
+			else if(this.creditosPanel.getVoltarLabel()==e.getSource()) {
+				colorir(Color.WHITE, e, true);
+			}
+			else if(this.sobrePanel.getVoltarLabel()==e.getSource()) {
+				colorir(Color.WHITE, e, true);
+			}else if(this.sobrePanel.getLink()==e.getSource()) {
+				colorir(Color.red, e, true);
+			}
+		}
+		
+		else if(this.mapaDasFasesPanel.isVisible()) {
 			if(this.mapaDasFasesPanel.getFase1IconPanel()==e.getSource()) {
 				this.mapaDasFasesPanel.getBackFase().setBounds(18, 430, 219,200);
 				this.mapaDasFasesPanel.getFase1IconPanel().setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -2342,8 +4073,27 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 	@Override
 	public void mouseExited(MouseEvent e) {
 		if(this.menuPanel.isVisible()||this.sobrePanel.isVisible()||this.creditosPanel.isVisible()) {
-			colorir(corLetra, e, true);
-		}else if(this.mapaDasFasesPanel.isVisible()) {
+			if(this.menuPanel.getJogarLabel()==e.getSource()) {
+				colorir(corLetra, e, false);
+			}else if(this.menuPanel.getCreditosLabel()==e.getSource()) {
+				colorir(corLetra, e, false);
+			}
+			else if(this.menuPanel.getSobreJLabel()==e.getSource()) {
+				colorir(corLetra, e, false);
+			}
+			else if(this.menuPanel.getSairLabel()==e.getSource()) {
+				colorir(corLetra, e, false);
+			}
+			else if(this.creditosPanel.getVoltarLabel()==e.getSource()) {
+				colorir(corLetra, e, false);
+			}
+			else if(this.sobrePanel.getVoltarLabel()==e.getSource()) {
+				colorir(corLetra, e, false);
+			}else if(this.sobrePanel.getLink()==e.getSource()) {
+				colorir(Color.black, e, false);
+			}
+		}
+		else if(this.mapaDasFasesPanel.isVisible()) {
 			if(this.mapaDasFasesPanel.getFase1IconPanel()==e.getSource()) {
 				this.mapaDasFasesPanel.getFase1IconPanel().setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
 			}else if(this.mapaDasFasesPanel.getFase2IconPanel()==e.getSource()) {
@@ -2384,8 +4134,9 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 		if(this.iniciarJogo.getJogarButton()==e.getSource()) {//informar nome do jogador
 			
 			if(!(this.iniciarJogo.getNomeField().getText().trim().length()==0)) {
+				resetou=false;
 				this.menuPanel.setFocusable(false);
-				this.menuPanel.getJogarLabel().setFocusable(false);
+				//this.menuPanel.getJogarLabel().setFocusable(false);
 				this.menuPanel.setVisible(false);
 				this.mapaDasFasesPanel.getNomeDoJogador().setText("Jogador: "+iniciarJogo.getNomeField().getText());
 				this.iniciarJogo.dispose();
@@ -2404,7 +4155,28 @@ public class Controle extends Thread implements MouseListener, ActionListener{
 			this.exibirMensagens.dispose();
 		}else if(this.exibirMensagenLonga.getOkButon()==e.getSource()) {
 			this.exibirMensagenLonga.dispose();
-		}else if(this.exibirGameOver.getJogarNovamente()==e.getSource()) {//JOGAR NOVAMENTE
+			exibirMensagenLonga.getMensagem().setBounds(68,30, 400, 20);
+		}else if(this.exibirParabens.getOkParabens()==e.getSource()) {
+			this.exibirParabens.dispose();
+			this.inventarioHorizontal.setPosInicialFuncao(15);
+			this.inventarioHorizontal.setPosInicialMain(15);
+			this.telaJogo.getContainerFase().getJogarLabel().setIcon(new ImageIcon("imagens\\caldeirao.png"));
+			this.index=0;
+			this.executando=false;
+			this.inventarioHorizontal.getQuadroPrincipal().removeAll();
+			this.inventarioHorizontal.getQuadroFuncao().removeAll();
+			this.telaJogo.getContainerFase().setVisible(false);
+			this.mapaDasFasesPanel.getRotuloBruxinha().setText("Salva");
+			this.mapaDasFasesPanel.getRotuloBruxinha().setForeground(Color.GREEN);
+			this.mapaDasFasesPanel.setVisible(true);
+		}else if(this.exibirInvalida.getOkInvalida()==e.getSource()) {
+			this.exibirInvalida.dispose();
+			
+		}
+		else if(this.exibirDesafio.getOkAviso()==e.getSource()) {
+			this.exibirDesafio.dispose();
+		}
+		else if(this.exibirGameOver.getJogarNovamente()==e.getSource()) {//JOGAR NOVAMENTE
 			this.exibirGameOver.dispose();
 			this.querJogar=true;
 			resetar();
